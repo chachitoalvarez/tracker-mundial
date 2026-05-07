@@ -48,11 +48,11 @@ export function LoginView() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-bold text-zinc-700 mb-2">Email</label>
+              <label className="block text-sm font-bold text-zinc-700 mb-2">Email o usuario</label>
               <input
                 type="text"
                 required
-                placeholder="tu@email.com"
+                placeholder="tu@email.com o tu_usuario"
                 className="w-full px-5 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
                 value={authEmail}
                 onChange={e => setAuthEmail(e.target.value)}

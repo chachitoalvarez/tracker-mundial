@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { supabase } from '@/services/supabase'
+import { signIn } from '@/services/auth.service'
 
 type AuthStep = 'email' | 'loading' | 'register'
 
@@ -64,13 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthStep('loading')
     setLoginError('')
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: authEmail.trim(),
-      password,
-    })
+    const { error } = await signIn(authEmail, password)
 
     if (error) {
-      setLoginError('Email o contraseña incorrectos.')
+      setLoginError(error)
       setAuthStep('email')
       setPassword('')
     } else {
