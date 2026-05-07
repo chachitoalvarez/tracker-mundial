@@ -1,9 +1,9 @@
-// TODO: replace mock returns with Supabase calls when integrating
-import { initialGroups } from '@/data/mockGroups'
+// TODO: replace with Supabase calls when integrating
 import type { Group } from '@/types/group'
 
 export async function listGroups(): Promise<Group[]> {
-  return initialGroups
+  // TODO: supabase.from('groups').select(...).eq('user_id', currentUserId)
+  return []
 }
 
 export async function createGroup(_name: string, _memberEmails: string[]): Promise<Group> {

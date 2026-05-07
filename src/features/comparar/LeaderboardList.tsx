@@ -1,4 +1,4 @@
-import { Medal, User } from 'lucide-react'
+import { Medal, User, UsersRound } from 'lucide-react'
 import { getProgressColor } from '@/lib/stats'
 import type { LeaderboardEntry } from '@/types/user'
 
@@ -9,8 +9,16 @@ interface Props {
 }
 
 export function LeaderboardList({ leaderboard, onClickUser, onClickMe }: Props) {
+  const hasOthers = leaderboard.some(u => !u.isMe)
+
   return (
     <div className="bg-white border border-zinc-200/60 rounded-3xl overflow-hidden mt-6 shadow-sm">
+      {!hasOthers && (
+        <div className="px-6 py-5 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-3 text-sm text-zinc-500">
+          <UsersRound className="w-4 h-4 text-zinc-400 flex-shrink-0" strokeWidth={2.5} />
+          Invita amigos para comparar su progreso. El ranking se actualizará cuando otros usuarios se unan.
+        </div>
+      )}
       <div className="grid grid-cols-1 divide-y divide-zinc-100">
         {leaderboard.map((user, index) => {
           const percentage = Math.round((user.completed / user.needed) * 100)

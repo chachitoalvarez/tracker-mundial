@@ -1,9 +1,9 @@
-// TODO: replace mock returns with Supabase calls when integrating
-import { mockTradeUsers } from '@/data/mockTradeUsers'
+// TODO: replace with Supabase calls when integrating
 import type { TradeUser } from '@/types/trade'
 
-export async function listConnections(): Promise<TradeUser[]> {
-  return mockTradeUsers
+export async function listTradeCandidates(): Promise<TradeUser[]> {
+  // TODO: supabase.from('profiles').select(...).not('id', 'eq', currentUserId)
+  return []
 }
 
 export async function sendLike(_userId: number): Promise<void> {

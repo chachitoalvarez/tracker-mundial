@@ -1,33 +1,21 @@
 import { useState } from 'react'
-import { mockTradeUsers, initialLikedByThem } from '@/data/mockTradeUsers'
 import type { TradeUser, Connection } from '@/types/trade'
 
 export function useTrades(
   _triggerCelebration: (type: 'sticker' | 'achievement' | 'match', msg: string, icon: string) => void
 ) {
+  const [tradeUsers] = useState<TradeUser[]>([])
   const [swipeIndex, setSwipeIndex] = useState(0)
   const [likedByMe, setLikedByMe] = useState<TradeUser[]>([])
-  const [likedByThem, setLikedByThem] = useState<TradeUser[]>(initialLikedByThem)
+  const [likedByThem, setLikedByThem] = useState<TradeUser[]>([])
   const [connections, setConnections] = useState<Connection[]>([])
   const [showMatchAnimation, setShowMatchAnimation] = useState(false)
 
   const handleSwipe = (direction: 'left' | 'right', user: TradeUser) => {
     if (direction === 'right') {
-      const isInstantMatch = user.id % 2 !== 0
-      if (isInstantMatch) {
-        setConnections(prev => [...prev, { ...user, isNew: true, hasUnread: false }])
-        setShowMatchAnimation(true)
-        setTimeout(() => {
-          setShowMatchAnimation(false)
-          setSwipeIndex(prev => prev + 1)
-        }, 1500)
-      } else {
-        setLikedByMe(prev => [...prev, user])
-        setSwipeIndex(prev => prev + 1)
-      }
-    } else {
-      setSwipeIndex(prev => prev + 1)
+      setLikedByMe(prev => [...prev, user])
     }
+    setSwipeIndex(prev => prev + 1)
   }
 
   const handleAcceptLike = (user: TradeUser) => {
@@ -53,7 +41,7 @@ export function useTrades(
     ))
   }
 
-  const currentTradeUser = swipeIndex < mockTradeUsers.length ? mockTradeUsers[swipeIndex] : null
+  const currentTradeUser = tradeUsers[swipeIndex] ?? null
   const unreadConnectionsCount = connections.filter(c => c.isNew || c.hasUnread).length
 
   return {

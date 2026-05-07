@@ -1,5 +1,4 @@
 import { Settings, User, UserMinus, UserPlus, Mail, Trash2 } from 'lucide-react'
-import { mockFriends } from '@/data/mockFriends'
 import type { Group } from '@/types/group'
 
 interface Props {
@@ -39,26 +38,19 @@ export function GroupManager({ group, manageEmails, setManageEmails, onAddMember
                 </span>
               </div>
             </div>
-            {group.members.map(memberId => {
-              const friend = mockFriends.find(f => f.id === memberId)
-              if (!friend) return null
-              return (
-                <div key={memberId} className="flex justify-between items-center bg-white px-4 py-3 rounded-2xl border border-zinc-200 hover:border-zinc-300 hover:shadow-sm transition-all group">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-zinc-400" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-zinc-800 truncate">{friend.name}</span>
-                      <span className="text-xs font-medium text-zinc-400 truncate">{friend.email}</span>
-                    </div>
+            {group.members.map(memberId => (
+              <div key={memberId} className="flex justify-between items-center bg-white px-4 py-3 rounded-2xl border border-zinc-200 hover:border-zinc-300 hover:shadow-sm transition-all group">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-5 h-5 text-zinc-400" />
                   </div>
-                  <button onClick={() => onRemoveMember(memberId)} className="text-zinc-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-colors flex-shrink-0 active:scale-90">
-                    <UserMinus className="w-4 h-4" strokeWidth={2.5} />
-                  </button>
+                  <span className="text-sm font-bold text-zinc-500 truncate">#{memberId}</span>
                 </div>
-              )
-            })}
+                <button onClick={() => onRemoveMember(memberId)} className="text-zinc-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-colors flex-shrink-0 active:scale-90">
+                  <UserMinus className="w-4 h-4" strokeWidth={2.5} />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 

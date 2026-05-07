@@ -24,7 +24,6 @@ import { ProfileDrawer } from '@/components/drawers/ProfileDrawer'
 import { PublicProfileDrawer } from '@/components/drawers/PublicProfileDrawer'
 import { ChatDrawer } from '@/components/drawers/ChatDrawer'
 
-import { mockFriends } from '@/data/mockFriends'
 import type { Tab } from '@/lib/constants'
 import type { LeaderboardEntry } from '@/types/user'
 
@@ -77,28 +76,18 @@ function AppShell() {
     handleRemoveMember, handleDeleteGroup,
   } = useGroups()
 
-  const leaderboard = useMemo((): LeaderboardEntry[] => {
-    let usersToShow = [...mockFriends]
-    if (compareFilter !== 'all') {
-      const activeGroup = groups.find(g => g.id === compareFilter)
-      if (activeGroup) {
-        usersToShow = usersToShow.filter(f => activeGroup.members.includes(f.id))
-      }
-    }
-    const allUsers: LeaderboardEntry[] = [
-      ...usersToShow,
-      {
-        id: 'me',
-        name: userName || 'Tú',
-        email: authEmail,
-        completed: stats.totalCompleted,
-        needed: stats.totalNeeded,
-        repeated: stats.totalRepeated,
-        isMe: true,
-      },
-    ]
-    return allUsers.sort((a, b) => b.completed - a.completed)
-  }, [stats, compareFilter, groups, userName, authEmail])
+  // TODO: load leaderboard entries from Supabase; for now only "me" is shown
+  const leaderboard = useMemo((): LeaderboardEntry[] => [
+    {
+      id: 'me',
+      name: userName || 'Tú',
+      email: authEmail,
+      completed: stats.totalCompleted,
+      needed: stats.totalNeeded,
+      repeated: stats.totalRepeated,
+      isMe: true,
+    },
+  ], [stats, userName, authEmail])
 
   if (!authInitialized) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
   if (!isAuthenticated) return <LoginView />

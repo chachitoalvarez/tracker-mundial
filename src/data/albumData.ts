@@ -19,7 +19,7 @@ const rawData: Array<{ section: string; needed: number; collected: number[] }> =
   { section: 'Egipto', needed: 20, collected: [] },
   { section: 'Inglaterra', needed: 20, collected: [] },
   { section: 'Francia', needed: 20, collected: [] },
-  { section: 'Alemania', needed: 20, collected: [1] },
+  { section: 'Alemania', needed: 20, collected: [] },
   { section: 'Ghana', needed: 20, collected: [] },
   { section: 'Haití', needed: 20, collected: [] },
   { section: 'Irán', needed: 20, collected: [] },

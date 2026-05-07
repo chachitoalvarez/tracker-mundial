@@ -16,12 +16,10 @@ export function useChat(
     markConnectionRead(user.id)
 
     if (!chatHistory[user.id]) {
-      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       setChatHistory(prev => ({
         ...prev,
         [user.id]: [
           { sender: 'system', text: 'Para tu seguridad, te recomendamos realizar los intercambios en lugares públicos y en horarios diurnos. Nunca transfieras dinero por adelantado ni compartas datos bancarios.' },
-          { sender: 'them', text: `¡Hola! Vi que hicimos match. Tengo ${user.hasForYou} figuritas que te sirven. ¿Te parece si cambiamos?`, time: currentTime },
         ],
       }))
     }
@@ -41,20 +39,10 @@ export function useChat(
       ],
     }))
     setChatMessage('')
-    setIsTyping(true)
+    markConnectionUnread(activeChatUser.id)
 
-    setTimeout(() => {
-      const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      setIsTyping(false)
-      setChatHistory(prev => ({
-        ...prev,
-        [activeChatUser.id]: [
-          ...(prev[activeChatUser.id] ?? []),
-          { sender: 'them', text: '¡Dale, me parece perfecto! ¿Por dónde te queda bien encontrarnos?', time: replyTime },
-        ],
-      }))
-      markConnectionUnread(activeChatUser.id)
-    }, 2000)
+    // TODO: send message via Supabase realtime
+    setIsTyping(false)
   }
 
   return {

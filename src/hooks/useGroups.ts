@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { initialGroups } from '@/data/mockGroups'
-import { mockFriends } from '@/data/mockFriends'
 import type { Group } from '@/types/group'
 
 export function useGroups() {
-  const [groups, setGroups] = useState<Group[]>(initialGroups)
+  const [groups, setGroups] = useState<Group[]>([])
   const [compareFilter, setCompareFilter] = useState<string>('all')
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [isManagingGroup, setIsManagingGroup] = useState(false)
@@ -24,15 +22,11 @@ export function useGroups() {
     e.preventDefault()
     if (!newGroupName.trim()) return
 
-    const emails = newGroupEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-    const matchedMembers = mockFriends
-      .filter(friend => emails.includes(friend.email.toLowerCase()))
-      .map(friend => friend.id)
-
+    // TODO: resolve emails to user IDs via Supabase before creating group
     const newGroup: Group = {
       id: `g${Date.now()}`,
       name: newGroupName,
-      members: matchedMembers,
+      members: [],
       admin: 'me',
     }
 
@@ -45,18 +39,7 @@ export function useGroups() {
 
   const handleAddMembersToGroup = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!manageEmails.trim() || !activeGroupObj) return
-
-    const emails = manageEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-    const matchedMembers = mockFriends
-      .filter(friend => emails.includes(friend.email.toLowerCase()))
-      .map(friend => friend.id)
-
-    setGroups(prev => prev.map(g => {
-      if (g.id !== activeGroupObj.id) return g
-      const newMembers = [...new Set([...g.members, ...matchedMembers])]
-      return { ...g, members: newMembers }
-    }))
+    // TODO: resolve emails to user IDs via Supabase before adding members
     setManageEmails('')
   }
 
