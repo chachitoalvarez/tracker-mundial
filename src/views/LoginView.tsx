@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { Trophy, Lock, Mail, AtSign, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
+import { Trophy, Lock, Mail, AtSign, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function LoginView() {
@@ -14,6 +14,7 @@ export function LoginView() {
 
   const passwordRef = useRef<HTMLInputElement>(null)
   const [signupSuccess, setSignupSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     if (!lastSignupEmail) return
@@ -66,14 +67,22 @@ export function LoginView() {
                 </div>
                 <input
                   ref={passwordRef}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="Ingresa tu contraseña"
-                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
+                  className="w-full pl-11 pr-12 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   disabled={authStep === 'loading'}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" strokeWidth={2} /> : <Eye className="w-5 h-5" strokeWidth={2} />}
+                </button>
               </div>
             </div>
             {loginError && (
@@ -95,7 +104,7 @@ export function LoginView() {
                 ¿No tienes una cuenta?{' '}
                 <button
                   type="button"
-                  onClick={() => { setIsLoginFlow(false); setAuthStep('register'); setAuthEmail(''); setPassword(''); setSignupSuccess(false) }}
+                  onClick={() => { setIsLoginFlow(false); setAuthStep('register'); setAuthEmail(''); setPassword(''); setSignupSuccess(false); setShowPassword(false) }}
                   className="text-amber-600 font-bold hover:text-amber-700 transition-colors"
                 >
                   Regístrate
@@ -154,14 +163,22 @@ export function LoginView() {
                   <Lock className="h-5 w-5 text-zinc-400 group-focus-within:text-amber-500 transition-colors" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
+                  className="w-full pl-11 pr-12 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   disabled={authStep === 'loading'}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" strokeWidth={2} /> : <Eye className="w-5 h-5" strokeWidth={2} />}
+                </button>
               </div>
             </div>
             {loginError && (
@@ -181,7 +198,7 @@ export function LoginView() {
                 ¿Ya tienes cuenta?{' '}
                 <button
                   type="button"
-                  onClick={() => { setAuthStep('email'); setIsLoginFlow(true); setPassword('') }}
+                  onClick={() => { setAuthStep('email'); setIsLoginFlow(true); setPassword(''); setShowPassword(false) }}
                   className="text-amber-600 font-bold hover:text-amber-700 transition-colors"
                 >
                   Inicia sesión
