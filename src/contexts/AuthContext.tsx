@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { supabase } from '@/services/supabase'
 
-type AuthStep = 'email' | 'loading' | 'register' | 'sent'
+type AuthStep = 'email' | 'loading' | 'register'
 
 interface AuthContextValue {
   isAuthenticated: boolean
+  authInitialized: boolean
   authEmail: string
   setAuthEmail: (v: string) => void
   authStep: AuthStep
@@ -20,31 +22,11 @@ interface AuthContextValue {
   handleLogout: () => void
 }
 
-const AUTH_STORAGE_KEY = 'tm_users'
-
-interface StoredUser {
-  email: string
-  userName: string
-  password: string
-}
-
-function getStoredUsers(): StoredUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) ?? '[]') as StoredUser[]
-  } catch {
-    return []
-  }
-}
-
-function saveUser(user: StoredUser) {
-  const users = getStoredUsers()
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify([...users, user]))
-}
-
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authInitialized, setAuthInitialized] = useState(false)
   const [authEmail, setAuthEmail] = useState('')
   const [authStep, setAuthStep] = useState<AuthStep>('email')
   const [isLoginFlow, setIsLoginFlow] = useState(true)
@@ -52,52 +34,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
 
-  // TODO: replace with Supabase auth
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUserName(session.user.user_metadata?.user_name ?? session.user.email?.split('@')[0] ?? '')
+        setIsAuthenticated(true)
+      }
+      setAuthInitialized(true)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUserName(session.user.user_metadata?.user_name ?? session.user.email?.split('@')[0] ?? '')
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!authEmail.trim() || password.length < 6) return
     setAuthStep('loading')
     setLoginError('')
 
-    setTimeout(() => {
-      const users = getStoredUsers()
-      const match = users.find(u => u.email === authEmail.trim())
-      if (match) {
-        if (match.password !== password) {
-          setLoginError('Contraseña incorrecta.')
-          setAuthStep('email')
-          setPassword('')
-        } else {
-          setUserName(match.userName)
-          setIsAuthenticated(true)
-          setAuthStep('email')
-          setPassword('')
-        }
-      } else {
-        setIsLoginFlow(false)
-        setAuthEmail('')
-        setUserName('')
-        setPassword('')
-        setAuthStep('register')
-      }
-    }, 800)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail.trim(),
+      password,
+    })
+
+    if (error) {
+      setLoginError('Email o contraseña incorrectos.')
+      setAuthStep('email')
+      setPassword('')
+    } else {
+      setAuthStep('email')
+      setPassword('')
+    }
   }
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userName.trim() || password.length < 6 || !authEmail.trim()) return
     setAuthStep('loading')
 
-    setTimeout(() => {
-      saveUser({ email: authEmail.trim(), userName: userName.trim(), password })
-      setIsAuthenticated(true)
+    const { error } = await supabase.auth.signUp({
+      email: authEmail.trim(),
+      password,
+      options: { data: { user_name: userName.trim() } },
+    })
+
+    if (error) {
+      setLoginError(error.message)
+      setAuthStep('register')
+    } else {
       setAuthStep('email')
       setPassword('')
-    }, 800)
+    }
   }
 
-  const handleLogout = () => {
-    setIsAuthenticated(false)
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     setAuthEmail('')
     setPassword('')
     setAuthStep('email')
@@ -107,7 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      isAuthenticated, authEmail, setAuthEmail, authStep, setAuthStep,
+      isAuthenticated, authInitialized,
+      authEmail, setAuthEmail, authStep, setAuthStep,
       isLoginFlow, setIsLoginFlow, userName, setUserName, password, setPassword,
       loginError, handleEmailSubmit, handleRegisterSubmit, handleLogout,
     }}>

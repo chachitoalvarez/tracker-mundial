@@ -29,7 +29,7 @@ import type { Tab } from '@/lib/constants'
 import type { LeaderboardEntry } from '@/types/user'
 
 function AppShell() {
-  const { isAuthenticated, userName, setUserName, authEmail, handleLogout } = useAuth()
+  const { isAuthenticated, authInitialized, userName, setUserName, authEmail, handleLogout } = useAuth()
   const {
     activeTab, setActiveTab,
     intercambiosTab, setIntercambiosTab,
@@ -96,6 +96,7 @@ function AppShell() {
     return allUsers.sort((a, b) => b.completed - a.completed)
   }, [stats, compareFilter, groups, userName, authEmail])
 
+  if (!authInitialized) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
   if (!isAuthenticated) return <LoginView />
 
   const intercambiosBadge = likedByThem.length + unreadConnectionsCount
