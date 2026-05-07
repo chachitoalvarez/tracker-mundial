@@ -28,20 +28,28 @@ export function useAchievements(
     ]
   }, [stats, albumData])
 
-  const prevUnlockedRef = useRef<string[]>([])
+  // null = not yet initialized (skip celebration on first render)
+  const previousUnlockedIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
-    const currentUnlocked = achievements.filter(a => a.unlocked).map(a => a.id)
-    if (prevUnlockedRef.current.length > 0) {
-      const newUnlocks = currentUnlocked.filter(id => !prevUnlockedRef.current.includes(id))
-      if (newUnlocks.length > 0) {
-        const newlyUnlocked = achievements.find(a => a.id === newUnlocks[0])
-        if (newlyUnlocked) {
-          triggerCelebration('achievement', `¡Nueva Medalla Desbloqueada!\n${newlyUnlocked.title}`, newlyUnlocked.icon)
+    const currentUnlocked = new Set(achievements.filter(a => a.unlocked).map(a => a.id))
+
+    if (previousUnlockedIdsRef.current === null) {
+      previousUnlockedIdsRef.current = currentUnlocked
+      return
+    }
+
+    const prev = previousUnlockedIdsRef.current
+    for (const id of currentUnlocked) {
+      if (!prev.has(id)) {
+        const achievement = achievements.find(a => a.id === id)
+        if (achievement) {
+          triggerCelebration('achievement', `¡Nueva Medalla Desbloqueada!\n${achievement.title}`, achievement.icon)
         }
       }
     }
-    prevUnlockedRef.current = currentUnlocked
+
+    previousUnlockedIdsRef.current = currentUnlocked
   }, [achievements, triggerCelebration])
 
   const unlockedCount = achievements.filter(a => a.unlocked).length
