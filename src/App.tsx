@@ -42,8 +42,8 @@ function AppShell() {
   const {
     albumData, stats, filteredData, currentSectionData,
     searchTerm, setSearchTerm, selectedSection, setSelectedSection,
-    showOnlyRepeated, setShowOnlyRepeated,
-    updateStickerCount, toggleAllInSection, handleGoToDetail,
+    detailFilter, setDetailFilter,
+    updateStickerCount, handleGoToDetail,
   } = useAlbum(triggerCelebration)
 
   const { achievements, unlockedCount } = useAchievements(albumData, stats, triggerCelebration)
@@ -165,12 +165,10 @@ function AppShell() {
                   albumData={albumData}
                   selectedSection={selectedSection}
                   setSelectedSection={setSelectedSection}
-                  showOnlyRepeated={showOnlyRepeated}
-                  setShowOnlyRepeated={setShowOnlyRepeated}
+                  detailFilter={detailFilter}
+                  setDetailFilter={setDetailFilter}
                   currentSectionData={currentSectionData}
                   stats={stats}
-                  onMarkAll={() => toggleAllInSection(selectedSection, 'fill')}
-                  onClearAll={() => toggleAllInSection(selectedSection, 'clear')}
                   onUpdateCount={updateStickerCount}
                 />
               )}

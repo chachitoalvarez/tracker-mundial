@@ -1,24 +1,22 @@
 import { DetalleFiltersBar } from '@/features/detalle/DetalleFiltersBar'
 import { StickerGrid } from '@/features/detalle/StickerGrid'
-import type { AlbumSection, AlbumStats } from '@/types/album'
+import type { AlbumSection, AlbumStats, DetailFilter } from '@/types/album'
 
 interface Props {
   albumData: AlbumSection[]
   selectedSection: string
   setSelectedSection: (v: string) => void
-  showOnlyRepeated: boolean
-  setShowOnlyRepeated: (v: boolean) => void
+  detailFilter: DetailFilter
+  setDetailFilter: (v: DetailFilter) => void
   currentSectionData: AlbumSection | null
   stats: AlbumStats
-  onMarkAll: () => void
-  onClearAll: () => void
   onUpdateCount: (section: string, num: number, delta: number) => void
 }
 
 export function DetalleView({
   albumData, selectedSection, setSelectedSection,
-  showOnlyRepeated, setShowOnlyRepeated,
-  currentSectionData, stats, onMarkAll, onClearAll, onUpdateCount,
+  detailFilter, setDetailFilter,
+  currentSectionData, stats, onUpdateCount,
 }: Props) {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 relative">
@@ -26,10 +24,8 @@ export function DetalleView({
         albumData={albumData}
         selectedSection={selectedSection}
         setSelectedSection={setSelectedSection}
-        showOnlyRepeated={showOnlyRepeated}
-        setShowOnlyRepeated={setShowOnlyRepeated}
-        onMarkAll={onMarkAll}
-        onClearAll={onClearAll}
+        detailFilter={detailFilter}
+        setDetailFilter={setDetailFilter}
         stats={stats}
       />
 
@@ -39,14 +35,14 @@ export function DetalleView({
               <StickerGrid
                 key={section.section}
                 sectionData={section}
-                showOnlyRepeated={showOnlyRepeated}
+                detailFilter={detailFilter}
                 onUpdateCount={onUpdateCount}
               />
             ))
           : currentSectionData && (
               <StickerGrid
                 sectionData={currentSectionData}
-                showOnlyRepeated={showOnlyRepeated}
+                detailFilter={detailFilter}
                 onUpdateCount={onUpdateCount}
               />
             )

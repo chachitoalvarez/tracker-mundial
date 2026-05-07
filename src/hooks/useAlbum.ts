@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { albumData as initialAlbumData } from '@/data/albumData'
-import type { AlbumSection } from '@/types/album'
+import type { AlbumSection, DetailFilter } from '@/types/album'
 import { computeStats } from '@/lib/stats'
 import { useLocalStorage } from './useLocalStorage'
 import { LOCAL_STORAGE_KEY, type Tab } from '@/lib/constants'
@@ -9,7 +9,7 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
   const [albumData, setAlbumData] = useLocalStorage<AlbumSection[]>(LOCAL_STORAGE_KEY, initialAlbumData)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSection, setSelectedSection] = useState<string>('all')
-  const [showOnlyRepeated, setShowOnlyRepeated] = useState(false)
+  const [detailFilter, setDetailFilter] = useState<DetailFilter>(null)
 
   const stats = useMemo(() => computeStats(albumData), [albumData])
 
@@ -42,20 +42,6 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     }))
   }
 
-  const toggleAllInSection = (sectionName: string, action: 'fill' | 'clear') => {
-    setAlbumData(prev => prev.map(item => {
-      if (sectionName !== 'all' && item.section !== sectionName) return item
-      if (action === 'fill') {
-        const allStickers = { ...item.collected }
-        for (let i = 1; i <= item.needed; i++) {
-          if (!allStickers[i]) allStickers[i] = 1
-        }
-        return { ...item, collected: allStickers }
-      }
-      return { ...item, collected: {} }
-    }))
-  }
-
   const handleGoToDetail = (sectionName: string, setActiveTab: (tab: Tab) => void) => {
     setSelectedSection(sectionName)
     setActiveTab('detalle')
@@ -70,10 +56,9 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     setSearchTerm,
     selectedSection,
     setSelectedSection,
-    showOnlyRepeated,
-    setShowOnlyRepeated,
+    detailFilter,
+    setDetailFilter,
     updateStickerCount,
-    toggleAllInSection,
     handleGoToDetail,
   }
 }

@@ -7,6 +7,7 @@ export interface AlbumSection {
 }
 
 export type StickerStatus = 'missing' | 'unique' | 'repeated'
+export type DetailFilter = 'repeated' | 'unique' | 'missing' | null
 
 export interface AlbumStats {
   totalNeeded: number

@@ -1,22 +1,26 @@
-import { Layers } from 'lucide-react'
-import type { AlbumSection, AlbumStats } from '@/types/album'
+import { Layers, Package, Search } from 'lucide-react'
+import type { AlbumSection, AlbumStats, DetailFilter } from '@/types/album'
 
 interface Props {
   albumData: AlbumSection[]
   selectedSection: string
   setSelectedSection: (v: string) => void
-  showOnlyRepeated: boolean
-  setShowOnlyRepeated: (v: boolean) => void
-  onMarkAll: () => void
-  onClearAll: () => void
+  detailFilter: DetailFilter
+  setDetailFilter: (v: DetailFilter) => void
   stats: AlbumStats
 }
 
+const BTN_BASE = 'px-4 py-3 text-sm font-bold rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-95 focus-visible:ring-4 focus-visible:ring-amber-500/20'
+const BTN_ACTIVE = 'bg-amber-500 text-white shadow-md'
+const BTN_INACTIVE = 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-sm'
+
 export function DetalleFiltersBar({
   albumData, selectedSection, setSelectedSection,
-  showOnlyRepeated, setShowOnlyRepeated,
-  onMarkAll, onClearAll, stats,
+  detailFilter, setDetailFilter, stats,
 }: Props) {
+  const toggle = (filter: DetailFilter) =>
+    setDetailFilter(detailFilter === filter ? null : filter)
+
   return (
     <div className="sticky top-[72px] sm:top-2 z-30 bg-zinc-50/80 sm:bg-white/80 backdrop-blur-xl py-3 sm:py-4 -mx-3 px-3 sm:-mx-6 sm:px-6 mb-6 sm:border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] sm:rounded-3xl transition-all">
       <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between max-w-6xl mx-auto">
@@ -41,21 +45,27 @@ export function DetalleFiltersBar({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:flex-row sm:w-auto">
           <button
-            onClick={() => setShowOnlyRepeated(!showOnlyRepeated)}
-            className={`col-span-2 sm:col-span-1 px-4 py-3 text-sm font-bold rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-95 ${
-              showOnlyRepeated ? 'bg-amber-500 text-white shadow-md' : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-sm'
-            }`}
+            onClick={() => toggle('unique')}
+            className={`${BTN_BASE} ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
+          >
+            <Package className="w-4 h-4" strokeWidth={2.5} />
+            Pegadas
+          </button>
+          <button
+            onClick={() => toggle('missing')}
+            className={`${BTN_BASE} ${detailFilter === 'missing' ? BTN_ACTIVE : BTN_INACTIVE}`}
+          >
+            <Search className="w-4 h-4" strokeWidth={2.5} />
+            Faltantes
+          </button>
+          <button
+            onClick={() => toggle('repeated')}
+            className={`${BTN_BASE} ${detailFilter === 'repeated' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
             <Layers className="w-4 h-4" strokeWidth={2.5} />
-            {showOnlyRepeated ? 'Viendo repetidas' : 'Filtrar repetidas'}
-          </button>
-          <button onClick={onMarkAll} className="px-4 py-3 bg-white border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 text-zinc-700 text-sm font-bold rounded-2xl transition-all active:scale-95 shadow-sm">
-            Marcar todas
-          </button>
-          <button onClick={onClearAll} className="px-4 py-3 bg-white border border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-300 text-zinc-700 text-sm font-bold rounded-2xl transition-all active:scale-95 shadow-sm">
-            Desmarcar todas
+            Repetidas
           </button>
         </div>
       </div>
