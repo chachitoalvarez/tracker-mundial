@@ -4,11 +4,43 @@ import type { LeaderboardEntry } from '@/types/user'
 
 interface Props {
   leaderboard: LeaderboardEntry[]
+  isLoading: boolean
+  emptyMessage?: string
   onClickUser: (user: LeaderboardEntry) => void
   onClickMe: () => void
 }
 
-export function LeaderboardList({ leaderboard, onClickUser, onClickMe }: Props) {
+export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickUser, onClickMe }: Props) {
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-zinc-200/60 rounded-3xl overflow-hidden mt-6 shadow-sm">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-4 sm:p-6 flex items-center gap-6 border-b border-zinc-100 last:border-0 animate-pulse">
+            <div className="w-10 h-10 bg-zinc-100 rounded-full flex-shrink-0" />
+            <div className="w-14 h-14 bg-zinc-100 rounded-full flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-zinc-100 rounded-full w-1/3" />
+              <div className="h-3 bg-zinc-100 rounded-full w-1/4" />
+            </div>
+            <div className="w-56 hidden sm:block space-y-2">
+              <div className="h-3 bg-zinc-100 rounded-full w-full" />
+              <div className="h-3 bg-zinc-100 rounded-full w-2/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (leaderboard.length === 0) {
+    return (
+      <div className="bg-white border border-zinc-200/60 rounded-3xl mt-6 shadow-sm px-6 py-8 flex items-start gap-3 text-sm text-zinc-500">
+        <UsersRound className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+        {emptyMessage ?? 'No hay datos disponibles.'}
+      </div>
+    )
+  }
+
   const hasOthers = leaderboard.some(u => !u.isMe)
 
   return (

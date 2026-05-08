@@ -8,6 +8,7 @@ import type { Group } from '@/types/group'
 
 interface Props {
   leaderboard: LeaderboardEntry[]
+  isLoadingLeaderboard: boolean
   groups: Group[]
   isLoadingGroups: boolean
   compareFilter: string
@@ -33,7 +34,7 @@ interface Props {
 }
 
 export function CompararView({
-  leaderboard, groups, isLoadingGroups, compareFilter, activeGroupObj, currentUserEmail,
+  leaderboard, isLoadingLeaderboard, groups, isLoadingGroups, compareFilter, activeGroupObj, currentUserEmail,
   showCreateGroup, setShowCreateGroup,
   isManagingGroup, setIsManagingGroup,
   newGroupName, setNewGroupName,
@@ -125,7 +126,17 @@ export function CompararView({
         />
       )}
 
-      <LeaderboardList leaderboard={leaderboard} onClickUser={onClickUser} onClickMe={onClickMe} />
+      <LeaderboardList
+        leaderboard={leaderboard}
+        isLoading={isLoadingLeaderboard}
+        emptyMessage={
+          compareFilter === 'all'
+            ? 'Aún no hay coleccionistas públicos. Activá tu perfil público en Ajustes para aparecer en el ranking.'
+            : 'Este grupo todavía no tiene miembros activos. Esperando que las invitaciones sean aceptadas.'
+        }
+        onClickUser={onClickUser}
+        onClickMe={onClickMe}
+      />
     </div>
   )
 }

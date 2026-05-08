@@ -1,4 +1,6 @@
-import { X, User, Edit2, Mail, Bell, Shield, LogOut } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, User, Edit2, Mail, Bell, Shield, LogOut, Check } from 'lucide-react'
+import * as profilesService from '@/services/profiles.service'
 import type { AlbumStats } from '@/types/album'
 
 interface Props {
@@ -18,6 +20,26 @@ export function ProfileDrawer({
   isOpen, onClose, userName, setUserName, authEmail,
   stats, unlockedAchievementsCount, connectionsCount, groupsCount, onLogout,
 }: Props) {
+  const [isPublicProfile, setIsPublicProfile] = useState(true)
+  const [savedFeedback, setSavedFeedback] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+    profilesService.getPublicProfileSetting().then(({ isPublic }) => setIsPublicProfile(isPublic))
+  }, [isOpen])
+
+  const handleTogglePublicProfile = async () => {
+    const next = !isPublicProfile
+    setIsPublicProfile(next)
+    const { error } = await profilesService.updatePublicProfileSetting(next)
+    if (!error) {
+      setSavedFeedback(true)
+      setTimeout(() => setSavedFeedback(false), 2000)
+    } else {
+      setIsPublicProfile(!next) // revert on error
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -75,24 +97,49 @@ export function ProfileDrawer({
         {/* Sección 3 — Contenido scrolleable */}
         <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide bg-white">
           <div className="p-5 space-y-5">
-            <h3 className="font-black text-zinc-800 tracking-tight">Preferencias</h3>
-            {[
-              { icon: <Bell className="w-5 h-5 text-zinc-600" />, label: 'Notificaciones', sub: 'Avisos de nuevos matches' },
-              { icon: <Shield className="w-5 h-5 text-zinc-600" />, label: 'Perfil Público', sub: 'Visible en explorador' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center justify-between p-3 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="bg-zinc-100 p-2.5 rounded-xl border border-zinc-200">{item.icon}</div>
-                  <div>
-                    <p className="text-sm font-bold text-zinc-800">{item.label}</p>
-                    <p className="text-xs font-medium text-zinc-500 mt-0.5">{item.sub}</p>
-                  </div>
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-zinc-800 tracking-tight">Preferencias</h3>
+              {savedFeedback && (
+                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1 animate-in fade-in">
+                  <Check className="w-3 h-3" strokeWidth={3} /> Guardado
+                </span>
+              )}
+            </div>
+
+            {/* Notificaciones — visual only */}
+            <div className="flex items-center justify-between p-3 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="bg-zinc-100 p-2.5 rounded-xl border border-zinc-200">
+                  <Bell className="w-5 h-5 text-zinc-600" />
                 </div>
-                <div className="w-12 h-7 bg-emerald-500 rounded-full relative shadow-inner border border-emerald-600">
-                  <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-1 shadow-sm" />
+                <div>
+                  <p className="text-sm font-bold text-zinc-800">Notificaciones</p>
+                  <p className="text-xs font-medium text-zinc-500 mt-0.5">Avisos de nuevos matches</p>
                 </div>
               </div>
-            ))}
+              <div className="w-12 h-7 bg-emerald-500 rounded-full relative shadow-inner border border-emerald-600">
+                <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-1 shadow-sm" />
+              </div>
+            </div>
+
+            {/* Perfil Público — functional */}
+            <div
+              className="flex items-center justify-between p-3 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer"
+              onClick={handleTogglePublicProfile}
+            >
+              <div className="flex items-center gap-4">
+                <div className="bg-zinc-100 p-2.5 rounded-xl border border-zinc-200">
+                  <Shield className="w-5 h-5 text-zinc-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-800">Perfil Público</p>
+                  <p className="text-xs font-medium text-zinc-500 mt-0.5">Visible en el ranking global</p>
+                </div>
+              </div>
+              <div className={`w-12 h-7 rounded-full relative shadow-inner border transition-colors ${isPublicProfile ? 'bg-emerald-500 border-emerald-600' : 'bg-zinc-200 border-zinc-300'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm transition-all ${isPublicProfile ? 'right-1' : 'left-1'}`} />
+              </div>
+            </div>
           </div>
         </div>
 

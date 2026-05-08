@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react'
+import { useEffect } from 'react'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { UIProvider, useUI } from '@/contexts/UIContext'
 import { useCelebration } from '@/hooks/useCelebration'
@@ -7,6 +7,7 @@ import { useAchievements } from '@/hooks/useAchievements'
 import { useTrades } from '@/hooks/useTrades'
 import { useChat } from '@/hooks/useChat'
 import { useGroups } from '@/hooks/useGroups'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
 
 import { LoginView } from '@/views/LoginView'
 import { ResumenView } from '@/views/ResumenView'
@@ -25,7 +26,7 @@ import { PublicProfileDrawer } from '@/components/drawers/PublicProfileDrawer'
 import { ChatDrawer } from '@/components/drawers/ChatDrawer'
 
 import type { Tab } from '@/lib/constants'
-import type { LeaderboardEntry } from '@/types/user'
+
 
 function AppShell() {
   const { isAuthenticated, authInitialized, userName, setUserName, authEmail, handleLogout } = useAuth()
@@ -76,18 +77,7 @@ function AppShell() {
     handleRemoveMember, handleDeleteGroup, refresh: refreshGroups,
   } = useGroups()
 
-  // TODO: load leaderboard entries from Supabase; for now only "me" is shown
-  const leaderboard = useMemo((): LeaderboardEntry[] => [
-    {
-      id: 'me',
-      name: userName || 'Tú',
-      email: authEmail,
-      completed: stats.totalCompleted,
-      needed: stats.totalNeeded,
-      repeated: stats.totalRepeated,
-      isMe: true,
-    },
-  ], [stats, userName, authEmail])
+  const { leaderboard, isLoadingLeaderboard } = useLeaderboard(compareFilter)
 
   if (!authInitialized) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
   if (!isAuthenticated) return <LoginView />
@@ -165,6 +155,7 @@ function AppShell() {
               {activeTab === 'comparar' && (
                 <CompararView
                   leaderboard={leaderboard}
+                  isLoadingLeaderboard={isLoadingLeaderboard}
                   groups={groups}
                   isLoadingGroups={isLoadingGroups}
                   compareFilter={compareFilter}
