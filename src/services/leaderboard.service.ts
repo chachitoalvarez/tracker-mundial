@@ -30,25 +30,18 @@ function rowToEntry(row: LeaderboardRow, currentUserId: string | null): Leaderbo
 export async function getGlobalLeaderboard(limit = 100): Promise<{ data: LeaderboardEntry[]; error: string | null }> {
   const [currentUserId, { data, error }] = await Promise.all([
     getCurrentUserId(),
-    supabase
-      .from('leaderboard_global')
-      .select('*')
-      .order('unique_count', { ascending: false })
-      .limit(limit),
+    supabase.rpc('get_leaderboard_global', { limit_count: limit }),
   ])
 
   if (error) return { data: [], error: error.message }
 
-  const entries = (data ?? []).map(row => rowToEntry(row as LeaderboardRow, currentUserId))
+  const entries = ((data ?? []) as LeaderboardRow[]).map((row: LeaderboardRow) => rowToEntry(row, currentUserId))
 
   // Append current user at the bottom if outside top N
-  if (currentUserId && !entries.some(e => e.isMe)) {
-    const { data: myRow } = await supabase
-      .from('leaderboard_global')
-      .select('*')
-      .eq('user_id', currentUserId)
-      .single()
-    if (myRow) entries.push(rowToEntry(myRow as LeaderboardRow, currentUserId))
+  if (currentUserId && !entries.some((e: LeaderboardEntry) => e.isMe)) {
+    const { data: extra } = await supabase.rpc('get_leaderboard_global', { limit_count: 10000 })
+    const myRow = ((extra ?? []) as LeaderboardRow[]).find((r: LeaderboardRow) => r.user_id === currentUserId)
+    if (myRow) entries.push(rowToEntry(myRow, currentUserId))
   }
 
   return { data: entries, error: null }
