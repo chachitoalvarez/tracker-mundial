@@ -66,7 +66,8 @@ function AppShell() {
   }, [isAuthenticated, setActiveChatUser])
 
   const {
-    groups, compareFilter, showCreateGroup, setShowCreateGroup,
+    groups, isLoadingGroups, isCreatingGroup, createGroupError,
+    compareFilter, showCreateGroup, setShowCreateGroup,
     isManagingGroup, setIsManagingGroup,
     newGroupName, setNewGroupName,
     newGroupEmails, setNewGroupEmails,
@@ -166,8 +167,10 @@ function AppShell() {
                 <CompararView
                   leaderboard={leaderboard}
                   groups={groups}
+                  isLoadingGroups={isLoadingGroups}
                   compareFilter={compareFilter}
                   activeGroupObj={activeGroupObj}
+                  currentUserEmail={authEmail || null}
                   showCreateGroup={showCreateGroup}
                   setShowCreateGroup={setShowCreateGroup}
                   isManagingGroup={isManagingGroup}
@@ -178,6 +181,8 @@ function AppShell() {
                   setNewGroupEmails={setNewGroupEmails}
                   manageEmails={manageEmails}
                   setManageEmails={setManageEmails}
+                  isCreatingGroup={isCreatingGroup}
+                  createGroupError={createGroupError}
                   onFilterChange={handleFilterChange}
                   onCreateGroup={handleCreateGroup}
                   onAddMembers={handleAddMembersToGroup}

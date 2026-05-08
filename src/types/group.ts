@@ -1,6 +1,12 @@
+export interface GroupMember {
+  email: string
+  userId: string | null
+  joinedAt: string | null
+}
+
 export interface Group {
   id: string
   name: string
-  members: number[]
-  admin: string
+  ownerId: string
+  members: GroupMember[]
 }

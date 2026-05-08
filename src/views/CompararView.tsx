@@ -8,8 +8,10 @@ import type { Group } from '@/types/group'
 interface Props {
   leaderboard: LeaderboardEntry[]
   groups: Group[]
+  isLoadingGroups: boolean
   compareFilter: string
   activeGroupObj: Group | null
+  currentUserEmail: string | null
   showCreateGroup: boolean
   setShowCreateGroup: (v: boolean) => void
   isManagingGroup: boolean
@@ -20,22 +22,25 @@ interface Props {
   setNewGroupEmails: (v: string) => void
   manageEmails: string
   setManageEmails: (v: string) => void
+  isCreatingGroup: boolean
+  createGroupError: string | null
   onFilterChange: (v: string) => void
   onCreateGroup: (e: React.FormEvent) => void
   onAddMembers: (e: React.FormEvent) => void
-  onRemoveMember: (id: number) => void
+  onRemoveMember: (email: string) => void
   onDeleteGroup: () => void
   onClickUser: (user: LeaderboardEntry) => void
   onClickMe: () => void
 }
 
 export function CompararView({
-  leaderboard, groups, compareFilter, activeGroupObj,
+  leaderboard, groups, isLoadingGroups, compareFilter, activeGroupObj, currentUserEmail,
   showCreateGroup, setShowCreateGroup,
   isManagingGroup, setIsManagingGroup,
   newGroupName, setNewGroupName,
   newGroupEmails, setNewGroupEmails,
   manageEmails, setManageEmails,
+  isCreatingGroup, createGroupError,
   onFilterChange, onCreateGroup, onAddMembers, onRemoveMember, onDeleteGroup,
   onClickUser, onClickMe,
 }: Props) {
@@ -48,9 +53,10 @@ export function CompararView({
               <UsersRound className="w-5 h-5" strokeWidth={2.5} />
             </div>
             <select
-              className="flex-1 md:w-64 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-bold text-zinc-900 cursor-pointer transition-all appearance-none"
+              className="flex-1 md:w-64 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-bold text-zinc-900 cursor-pointer transition-all appearance-none disabled:opacity-60"
               value={compareFilter}
               onChange={e => onFilterChange(e.target.value)}
+              disabled={isLoadingGroups}
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                 backgroundPosition: 'right .5rem center',
@@ -58,8 +64,10 @@ export function CompararView({
                 backgroundSize: '1.5em 1.5em',
               }}
             >
-              <option value="all">🌍 Todos (Global)</option>
-              {groups.length > 0 && (
+              <option value="all">
+                {isLoadingGroups ? 'Cargando grupos...' : '🌍 Todos (Global)'}
+              </option>
+              {!isLoadingGroups && groups.length > 0 && (
                 <optgroup label="Tus Grupos Privados">
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>👥 {g.name}</option>
@@ -93,6 +101,7 @@ export function CompararView({
       {isManagingGroup && activeGroupObj && (
         <GroupManager
           group={activeGroupObj}
+          currentUserEmail={currentUserEmail}
           manageEmails={manageEmails}
           setManageEmails={setManageEmails}
           onAddMembers={onAddMembers}
@@ -107,6 +116,8 @@ export function CompararView({
           setNewGroupName={setNewGroupName}
           newGroupEmails={newGroupEmails}
           setNewGroupEmails={setNewGroupEmails}
+          isLoading={isCreatingGroup}
+          error={createGroupError}
           onSubmit={onCreateGroup}
         />
       )}

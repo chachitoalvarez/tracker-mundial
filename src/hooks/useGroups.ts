@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import * as groupsService from '@/services/groups.service'
+import { parseEmails } from '@/services/groups.service'
 import type { Group } from '@/types/group'
 
 export function useGroups() {
   const [groups, setGroups] = useState<Group[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [createGroupError, setCreateGroupError] = useState<string | null>(null)
   const [compareFilter, setCompareFilter] = useState<string>('all')
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [isManagingGroup, setIsManagingGroup] = useState(false)
@@ -12,49 +17,70 @@ export function useGroups() {
 
   const activeGroupObj = groups.find(g => g.id === compareFilter) ?? null
 
+  const refresh = useCallback(async () => {
+    const { data, error } = await groupsService.listGroups()
+    if (!error) setGroups(data)
+  }, [])
+
+  useEffect(() => {
+    groupsService.listGroups().then(({ data, error }) => {
+      if (!error) setGroups(data)
+      setIsLoadingGroups(false)
+    })
+  }, [])
+
   const handleFilterChange = (value: string) => {
     setCompareFilter(value)
     setIsManagingGroup(false)
     setShowCreateGroup(false)
   }
 
-  const handleCreateGroup = (e: React.FormEvent) => {
+  const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newGroupName.trim()) return
+    setIsCreatingGroup(true)
+    setCreateGroupError(null)
 
-    // TODO: resolve emails to user IDs via Supabase before creating group
-    const newGroup: Group = {
-      id: `g${Date.now()}`,
-      name: newGroupName,
-      members: [],
-      admin: 'me',
+    const emails = parseEmails(newGroupEmails)
+    const { data, error } = await groupsService.createGroup(newGroupName, emails)
+
+    setIsCreatingGroup(false)
+    if (error) {
+      setCreateGroupError(error)
+      return
     }
-
-    setGroups(prev => [...prev, newGroup])
-    setCompareFilter(newGroup.id)
-    setShowCreateGroup(false)
-    setNewGroupName('')
-    setNewGroupEmails('')
+    if (data) {
+      await refresh()
+      setCompareFilter(data.id)
+      setShowCreateGroup(false)
+      setNewGroupName('')
+      setNewGroupEmails('')
+    }
   }
 
-  const handleAddMembersToGroup = (e: React.FormEvent) => {
+  const handleAddMembersToGroup = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: resolve emails to user IDs via Supabase before adding members
-    setManageEmails('')
+    if (!activeGroupObj || !manageEmails.trim()) return
+    const emails = parseEmails(manageEmails)
+    const { error } = await groupsService.addMembersToGroup(activeGroupObj.id, emails)
+    if (!error) {
+      await refresh()
+      setManageEmails('')
+    }
   }
 
-  const handleRemoveMember = (memberId: number) => {
+  const handleRemoveMember = async (email: string) => {
     if (!activeGroupObj) return
-    setGroups(prev => prev.map(g => {
-      if (g.id !== activeGroupObj.id) return g
-      return { ...g, members: g.members.filter(id => id !== memberId) }
-    }))
+    const { error } = await groupsService.removeMember(activeGroupObj.id, email)
+    if (!error) await refresh()
   }
 
-  const handleDeleteGroup = () => {
+  const handleDeleteGroup = async () => {
     if (!activeGroupObj) return
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el grupo "${activeGroupObj.name}"?`)) {
-      setGroups(prev => prev.filter(g => g.id !== activeGroupObj.id))
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar el grupo "${activeGroupObj.name}"?`)) return
+    const { error } = await groupsService.deleteGroup(activeGroupObj.id)
+    if (!error) {
+      await refresh()
       setCompareFilter('all')
       setIsManagingGroup(false)
     }
@@ -62,6 +88,9 @@ export function useGroups() {
 
   return {
     groups,
+    isLoadingGroups,
+    isCreatingGroup,
+    createGroupError,
     compareFilter,
     showCreateGroup,
     setShowCreateGroup,

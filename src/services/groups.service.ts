@@ -1,16 +1,121 @@
-// TODO: replace with Supabase calls when integrating
-import type { Group } from '@/types/group'
+import { supabase } from '@/services/supabase'
+import type { Group, GroupMember } from '@/types/group'
 
-export async function listGroups(): Promise<Group[]> {
-  // TODO: supabase.from('groups').select(...).eq('user_id', currentUserId)
-  return []
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function parseEmails(raw: string): string[] {
+  return [...new Set(
+    raw.split(/[\s,;]+/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => EMAIL_RE.test(e))
+  )]
 }
 
-export async function createGroup(_name: string, _memberEmails: string[]): Promise<Group> {
-  // TODO: supabase.from('groups').insert(...)
-  throw new Error('Not implemented')
+function rowToGroup(row: Record<string, unknown>): Group {
+  const members = (row.group_members as Record<string, unknown>[] ?? [])
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    ownerId: row.owner_id as string,
+    members: members.map((m): GroupMember => ({
+      email: m.email as string,
+      userId: (m.user_id as string) ?? null,
+      joinedAt: (m.joined_at as string) ?? null,
+    })),
+  }
 }
 
-export async function deleteGroup(_id: string): Promise<void> {
-  // TODO: supabase.from('groups').delete().eq('id', id)
+export async function listGroups(): Promise<{ data: Group[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('groups')
+    .select('*, group_members(*)')
+    .order('created_at', { ascending: false })
+
+  if (error) return { data: [], error: error.message }
+  return { data: (data ?? []).map(rowToGroup), error: null }
+}
+
+export async function createGroup(
+  name: string,
+  invitedEmails: string[],
+): Promise<{ data: Group | null; error: string | null }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'No hay sesión activa' }
+
+  // TODO: wrap in RPC for atomicity
+  const { data: groupRow, error: groupErr } = await supabase
+    .from('groups')
+    .insert({ name: name.trim(), owner_id: user.id })
+    .select()
+    .single()
+
+  if (groupErr) return { data: null, error: groupErr.message }
+
+  const groupId = (groupRow as Record<string, unknown>).id as string
+  const ownerEmail = (user.email ?? '').toLowerCase()
+
+  const uniqueInvited = invitedEmails.filter(e => e !== ownerEmail)
+  const memberRows = [
+    { group_id: groupId, email: ownerEmail, user_id: user.id, joined_at: new Date().toISOString() },
+    ...uniqueInvited.map(email => ({ group_id: groupId, email, user_id: null as null, joined_at: null as null })),
+  ]
+
+  const { error: membersErr } = await supabase.from('group_members').insert(memberRows)
+  if (membersErr) {
+    // Best-effort cleanup: remove orphan group if member insert fails
+    await supabase.from('groups').delete().eq('id', groupId)
+    return { data: null, error: membersErr.message }
+  }
+
+  const { data: full, error: fetchErr } = await supabase
+    .from('groups')
+    .select('*, group_members(*)')
+    .eq('id', groupId)
+    .single()
+
+  if (fetchErr) return { data: null, error: fetchErr.message }
+  return { data: rowToGroup(full as Record<string, unknown>), error: null }
+}
+
+export async function addMembersToGroup(
+  groupId: string,
+  emails: string[],
+): Promise<{ error: string | null }> {
+  if (!emails.length) return { error: 'No se encontraron emails válidos' }
+
+  const rows = emails.map(email => ({
+    group_id: groupId,
+    email,
+    user_id: null as null,
+    joined_at: null as null,
+  }))
+
+  const { error } = await supabase
+    .from('group_members')
+    .upsert(rows, { onConflict: 'group_id,email' })
+
+  return { error: error?.message ?? null }
+}
+
+export async function removeMember(
+  groupId: string,
+  email: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('group_members')
+    .delete()
+    .eq('group_id', groupId)
+    .eq('email', email)
+
+  return { error: error?.message ?? null }
+}
+
+export async function deleteGroup(groupId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('groups').delete().eq('id', groupId)
+  return { error: error?.message ?? null }
+}
+
+export async function getCurrentUserEmail(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.email?.toLowerCase() ?? null
 }
