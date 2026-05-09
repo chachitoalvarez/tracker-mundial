@@ -1,4 +1,52 @@
-import type { AlbumSection } from '@/types/album'
+import type { AlbumSection, PlayerInfo } from '@/types/album'
+
+const playersData: Record<string, PlayerInfo[]> = {
+  'Argentina': [
+    { number: 1, name: 'Emiliano Martínez' },
+    { number: 2, name: 'Geronimo Rulli' },
+    { number: 3, name: 'Nahuel Molina' },
+    { number: 4, name: 'Cristian Romero' },
+    { number: 5, name: 'Nicolás Otamendi' },
+    { number: 6, name: 'Germán Pezzella' },
+    { number: 7, name: 'Nicolás Tagliafico' },
+    { number: 8, name: 'Rodrigo De Paul' },
+    { number: 9, name: 'Leandro Paredes' },
+    { number: 10, name: 'Enzo Fernández' },
+    { number: 11, name: 'Alexis Mac Allister' },
+    { number: 12, name: 'Guido Rodríguez' },
+    { number: 13, name: 'Lionel Messi', role: 'captain' },
+    { number: 14, name: 'Lautaro Martínez' },
+    { number: 15, name: 'Julián Álvarez' },
+    { number: 16, name: 'Ángel Di María' },
+    { number: 17, name: 'Paulo Dybala' },
+    { number: 18, name: 'Nicolás González' },
+    { number: 19, name: 'Marcos Acuña' },
+    { number: 20, name: 'Valentín Carboni' },
+  ],
+  'Brasil': [
+    { number: 1, name: 'Alisson' },
+    { number: 2, name: 'Ederson' },
+    { number: 3, name: 'Danilo', role: 'captain' },
+    { number: 4, name: 'Marquinhos' },
+    { number: 5, name: 'Thiago Silva' },
+    { number: 6, name: 'Éder Militão' },
+    { number: 7, name: 'Alex Sandro' },
+    { number: 8, name: 'Renan Lodi' },
+    { number: 9, name: 'Casemiro' },
+    { number: 10, name: 'Neymar Jr', role: 'special' },
+    { number: 11, name: 'Lucas Paquetá' },
+    { number: 12, name: 'Vinícius Jr' },
+    { number: 13, name: 'Rodrygo' },
+    { number: 14, name: 'Gabriel Jesus' },
+    { number: 15, name: 'Richarlison' },
+    { number: 16, name: 'Raphinha' },
+    { number: 17, name: 'Bruno Guimarães' },
+    { number: 18, name: 'Fred' },
+    { number: 19, name: 'Antony' },
+    { number: 20, name: 'Gabriel Martinelli' },
+  ],
+  // TODO: completar nombres oficiales del Mundial 2026 para el resto de selecciones
+}
 
 const rawData: Array<{ section: string; needed: number; collected: number[] }> = [
   { section: 'Argentina', needed: 20, collected: [] },
@@ -56,5 +104,10 @@ const rawData: Array<{ section: string; needed: number; collected: number[] }> =
 export const albumData: AlbumSection[] = rawData.map(item => {
   const collected: Record<number, number> = {}
   item.collected.forEach(num => { collected[num] = 1 })
-  return { section: item.section, needed: item.needed, collected }
+  return {
+    section: item.section,
+    needed: item.needed,
+    collected,
+    players: playersData[item.section],
+  }
 })

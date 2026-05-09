@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
+import { getPlayerInfo } from '@/lib/album'
 
 interface Props {
   sectionName: string
   stickers: Record<string, number>
   variant: 'theyOffer' | 'iOffer'
   defaultOpen?: boolean
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  captain: 'Capitán',
+  coach: 'DT',
+  special: 'Especial',
 }
 
 export function TradeStickerGroup({ sectionName, stickers, variant, defaultOpen = false }: Props) {
@@ -34,19 +41,41 @@ export function TradeStickerGroup({ sectionName, stickers, variant, defaultOpen 
       </button>
 
       {open && (
-        <div className={`p-3 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-top-1 ${isAmber ? 'bg-amber-50/50' : 'bg-blue-50/50'}`}>
+        <ul className={`divide-y animate-in fade-in slide-in-from-top-1 ${isAmber ? 'bg-amber-50/30 divide-amber-100/60' : 'bg-blue-50/30 divide-blue-100/60'}`}>
           {stickerEntries
             .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-            .map(([num, count]) => (
-              <span
-                key={num}
-                className={`text-xs font-black px-2.5 py-1 rounded-lg shadow-sm border bg-white ${isAmber ? 'border-amber-200 text-amber-800' : 'border-blue-200 text-blue-800'}`}
-              >
-                #{num}{count > 1 && <span className="ml-1 text-[10px] font-bold opacity-70">×{count}</span>}
-              </span>
-            ))
+            .map(([num, count]) => {
+              const player = getPlayerInfo(sectionName, parseInt(num))
+              const displayName = player?.name ?? `Figurita ${num}`
+              const roleLabel = player?.role ? ROLE_LABEL[player.role] ?? null : null
+
+              return (
+                <li key={num} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-sm shadow-sm border ${isAmber ? 'bg-white border-amber-200 text-amber-700' : 'bg-white border-blue-200 text-blue-700'}`}>
+                    {num}
+                  </div>
+
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className={`text-sm font-bold tracking-tight truncate ${isAmber ? 'text-amber-900' : 'text-blue-900'}`}>
+                      {displayName}
+                    </span>
+                    {roleLabel && (
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 ${isAmber ? 'bg-amber-200/70 text-amber-800' : 'bg-blue-200/70 text-blue-800'}`}>
+                        {roleLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {count > 1 && (
+                    <span className={`text-xs font-black tracking-tight flex-shrink-0 ${isAmber ? 'text-amber-600' : 'text-blue-600'}`}>
+                      ×{count}
+                    </span>
+                  )}
+                </li>
+              )
+            })
           }
-        </div>
+        </ul>
       )}
     </div>
   )
