@@ -50,26 +50,28 @@ export async function getAlbumState(): Promise<{ data: AlbumSection[] | null; er
 
   const { uniqueCount, repeatedCount } = computeTotals(migratedCollected)
 
-  // ignoreDuplicates: true — creates row if missing, leaves existing row untouched
-  const { data: upserted, error: upsertErr } = await supabase
+  // ignoreDuplicates: true — creates row if missing, leaves existing row untouched.
+  // Avoid .single() here: when row already exists, the upsert returns [] (no error),
+  // but .single() would return a 406 expecting exactly one row.
+  const { data: upsertedRows } = await supabase
     .from('user_album_state')
     .upsert(
       { user_id: user.id, collected: migratedCollected, unique_count: uniqueCount, repeated_count: repeatedCount, total_needed: TOTAL_NEEDED },
       { onConflict: 'user_id', ignoreDuplicates: true }
     )
     .select('collected')
-    .single()
 
-  if (upserted) return { data: toAlbumData(upserted.collected as CollectedMap), error: null }
+  const upserted = (upsertedRows as { collected: CollectedMap }[] | null)?.[0] ?? null
+  if (upserted) return { data: toAlbumData(upserted.collected), error: null }
 
-  // ignoreDuplicates suppresses the return when row already existed — fetch it
+  // Row already existed — fetch it
   const { data: existing, error: selectErr } = await supabase
     .from('user_album_state')
     .select('collected')
     .eq('user_id', user.id)
     .single()
 
-  if (selectErr) return { data: null, error: upsertErr?.message ?? selectErr.message }
+  if (selectErr) return { data: null, error: selectErr.message }
   return { data: toAlbumData(existing.collected as CollectedMap), error: null }
 }
 
