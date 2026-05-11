@@ -90,6 +90,16 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
         </div>
 
         {/* Sección 3 — Cruce de figuritas */}
+        {matchState.status === 'ok' && (() => { console.log('[PPDrawer RENDER]', {
+          status: matchState.status,
+          theyOfferCount: matchState.match.theyOfferCount,
+          iOfferCount: matchState.match.iOfferCount,
+          theyOfferKeys: Object.keys(matchState.match.theyOffer),
+          iOfferKeys: Object.keys(matchState.match.iOffer),
+          theyOfferFull: JSON.stringify(matchState.match.theyOffer),
+          iOfferFull: JSON.stringify(matchState.match.iOffer),
+          noMatch,
+        }); return null })()}
         <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide bg-white">
 
           {matchState.status === 'loading' && (
