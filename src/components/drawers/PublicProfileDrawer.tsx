@@ -151,7 +151,7 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Te sirven</h3>
+                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Recibís</h3>
                     </div>
                     <span className="text-[11px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                       {matchState.match.theyOfferCount} {matchState.match.theyOfferCount === 1 ? 'figurita' : 'figuritas'}
@@ -179,7 +179,7 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       <RefreshCcw className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Tenés para él</h3>
+                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Entregás</h3>
                     </div>
                     <span className="text-[11px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
                       {matchState.match.iOfferCount} {matchState.match.iOfferCount === 1 ? 'figurita' : 'figuritas'}
