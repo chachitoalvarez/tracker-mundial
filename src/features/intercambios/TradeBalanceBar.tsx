@@ -25,7 +25,7 @@ export function TradeBalanceBar({ theyCount, iCount }: Props) {
           <span className="text-zinc-400 font-medium">recibís</span>
         </div>
         <div className="flex-1 flex items-center gap-1 text-xs justify-end">
-          <span className="text-zinc-400 font-medium">das</span>
+          <span className="text-zinc-400 font-medium">entregás</span>
           <span className="font-black text-blue-700">{iCount}</span>
         </div>
       </div>
