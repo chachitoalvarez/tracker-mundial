@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AlertCircle, Camera, Check, ImagePlus, Minus, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import { albumStickers } from '@/data/albumData'
 import { findStickerByCode, formatStickerDisplayId, searchStickers } from '@/lib/album'
-import { mockDetectStickersFromPhoto, type DetectedSticker } from '@/services/stickerScan.service'
+import { detectStickersFromPhoto, type DetectedSticker } from '@/services/stickerScan.service'
 import type { Sticker } from '@/types/album'
 
 interface Props {
@@ -23,11 +23,14 @@ type FlowState =
 function normalizeDetections(detections: DetectedSticker[]): DetectedSticker[] {
   const grouped = new Map<string, DetectedSticker>()
   for (const detection of detections) {
-    const current = grouped.get(detection.sticker.codigoFigura)
-    grouped.set(detection.sticker.codigoFigura, {
+    const current = grouped.get(detection.code)
+    grouped.set(detection.code, {
       id: current?.id ?? detection.id,
-      sticker: detection.sticker,
+      code: detection.code,
       quantity: (current?.quantity ?? 0) + detection.quantity,
+      status: detection.status,
+      sticker: detection.sticker ?? current?.sticker,
+      rawText: current?.rawText ? `${current.rawText}, ${detection.rawText ?? detection.code}` : detection.rawText,
     })
   }
   return Array.from(grouped.values())
@@ -47,18 +50,22 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
   const handleFile = async (file?: File) => {
     if (!file) return
     setFlow({ step: 'detecting' })
-    const detections = await mockDetectStickersFromPhoto(file)
-    const totalDetected = detections.reduce((acc, item) => acc + item.quantity, 0)
+    try {
+      const detections = await detectStickersFromPhoto(file)
+      const totalDetected = detections.reduce((acc, item) => acc + item.quantity, 0)
 
-    if (totalDetected > 10) {
-      setFlow({ step: 'too_many' })
-      return
-    }
-    if (detections.length === 0) {
+      if (totalDetected > 10) {
+        setFlow({ step: 'too_many' })
+        return
+      }
+      if (detections.length === 0) {
+        setFlow({ step: 'empty' })
+        return
+      }
+      setFlow({ step: 'review', detections: normalizeDetections(detections) })
+    } catch {
       setFlow({ step: 'empty' })
-      return
     }
-    setFlow({ step: 'review', detections: normalizeDetections(detections) })
   }
 
   const updateDetection = (id: string, patch: Partial<DetectedSticker>) => {
@@ -80,7 +87,9 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
       setFlow({ step: 'too_many' })
       return
     }
-    onConfirm(normalizeDetections(flow.detections).map(({ sticker, quantity }) => ({ sticker, quantity })))
+    const readyDetections = normalizeDetections(flow.detections).filter(item => item.status === 'detected' && item.sticker)
+    if (readyDetections.length !== flow.detections.length) return
+    onConfirm(readyDetections.map(({ sticker, quantity }) => ({ sticker: sticker!, quantity })))
     setFlow({ step: 'success' })
   }
 
@@ -97,6 +106,8 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
     const results = exact ? [exact] : searchStickers(query)
     return results.slice(0, 12)
   }
+
+  const hasPendingReview = flow.step === 'review' && flow.detections.some(item => item.status === 'needs_review' || !item.sticker)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-zinc-900/60 backdrop-blur-sm animate-in fade-in">
@@ -200,11 +211,17 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                   <div key={item.id} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-11 bg-white border border-zinc-200 rounded-xl flex items-center justify-center font-black text-amber-600 shadow-sm">
-                        {formatStickerDisplayId(item.sticker.codigoFigura)}
+                        {formatStickerDisplayId(item.code)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-black text-zinc-900 truncate">{item.sticker.nombreFigura || item.sticker.codigoAlias}</p>
-                        <p className="text-xs font-bold text-zinc-400 truncate">{item.sticker.subseccion}</p>
+                        <p className="text-sm font-black text-zinc-900 truncate">
+                          {item.sticker?.nombreFigura || item.sticker?.codigoAlias || 'Necesita revisión'}
+                        </p>
+                        <p className={`text-xs font-bold truncate ${item.status === 'needs_review' ? 'text-amber-600' : 'text-zinc-400'}`}>
+                          {item.status === 'needs_review'
+                            ? `Código leído: ${item.rawText ?? item.code}`
+                            : item.sticker?.subseccion}
+                        </p>
                       </div>
                       <button onClick={() => removeDetection(item.id)} className="w-9 h-9 rounded-xl bg-white border border-zinc-200 text-zinc-400 hover:text-red-500 hover:border-red-200 transition-colors flex items-center justify-center">
                         <Trash2 className="w-4 h-4" strokeWidth={2.5} />
@@ -238,7 +255,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                           <button
                             key={sticker.codigoFigura}
                             onClick={() => {
-                              updateDetection(item.id, { sticker })
+                              updateDetection(item.id, { sticker, code: sticker.codigoFigura, status: 'detected', rawText: item.rawText ?? item.code })
                               setSearchById(prev => ({ ...prev, [item.id]: '' }))
                             }}
                             className="text-left bg-white border border-zinc-200 rounded-xl px-3 py-2 hover:border-amber-300 hover:bg-amber-50 transition-colors"
@@ -253,6 +270,15 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                   </div>
                 ))}
               </div>
+
+              {hasPendingReview && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+                  <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                    Hay códigos que necesitan revisión. Corregilos o elimínalos antes de guardar.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -270,7 +296,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                 <RotateCcw className="w-5 h-5" strokeWidth={2.5} />
                 Escanear otra foto
               </button>
-              <button onClick={confirm} disabled={flow.detections.length === 0} className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 disabled:bg-zinc-200 disabled:text-zinc-400 transition-all">
+              <button onClick={confirm} disabled={flow.detections.length === 0 || hasPendingReview} className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 disabled:bg-zinc-200 disabled:text-zinc-400 transition-all">
                 Guardar figuritas
               </button>
             </div>
