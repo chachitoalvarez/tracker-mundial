@@ -18,22 +18,22 @@ export function LogrosHeader({ unlockedCount, totalCount }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <p className="text-xs font-black text-amber-600 uppercase tracking-wider mb-1">Vitrina de medallas</p>
-              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight">Tu progreso desbloquea logros</h2>
+              <p className="text-xs font-black text-amber-600 uppercase tracking-wider mb-1">Medallero</p>
+              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight">Convertí avance en medallas</h2>
             </div>
             <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2 w-fit">
               <p className="text-2xl font-black text-amber-700 leading-none">{unlockedCount}/{totalCount}</p>
-              <p className="text-[10px] font-bold text-amber-700/70 uppercase tracking-wider mt-1">Logros</p>
+              <p className="text-[10px] font-bold text-amber-700/70 uppercase tracking-wider mt-1">Ganadas</p>
             </div>
           </div>
 
           <p className="text-sm text-zinc-500 mt-3 font-medium leading-relaxed max-w-2xl">
-            Completá objetivos del álbum para desbloquear medallas. Cada logro marca un hito concreto: primeras figuritas, secciones completas, repetidas listas para canjear y avance total.
+            Cada medalla marca un hito real de tu álbum: completar, repetir, canjear y avanzar.
           </p>
 
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs font-bold text-zinc-400 mb-2">
-              <span>Progreso de logros</span>
+              <span>Progreso</span>
               <span>{percentage}%</span>
             </div>
             <div className="h-2.5 bg-zinc-100 rounded-full overflow-hidden shadow-inner">
