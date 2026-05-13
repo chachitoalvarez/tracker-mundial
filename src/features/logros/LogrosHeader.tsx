@@ -6,8 +6,6 @@ interface Props {
 }
 
 export function LogrosHeader({ unlockedCount, totalCount }: Props) {
-  const percentage = totalCount === 0 ? 0 : Math.round((unlockedCount / totalCount) * 100)
-
   return (
     <section className="bg-white border border-zinc-200/70 rounded-3xl p-5 sm:p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center gap-5">
@@ -30,16 +28,6 @@ export function LogrosHeader({ unlockedCount, totalCount }: Props) {
           <p className="text-sm text-zinc-500 mt-3 font-medium leading-relaxed max-w-2xl">
             Cada medalla marca un hito real de tu álbum: completar, repetir, canjear y avanzar.
           </p>
-
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs font-bold text-zinc-400 mb-2">
-              <span>Progreso</span>
-              <span>{percentage}%</span>
-            </div>
-            <div className="h-2.5 bg-zinc-100 rounded-full overflow-hidden shadow-inner">
-              <div className="h-full bg-amber-500 rounded-full transition-all duration-700" style={{ width: `${percentage}%` }} />
-            </div>
-          </div>
         </div>
       </div>
     </section>
