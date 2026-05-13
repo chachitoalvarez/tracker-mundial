@@ -19,6 +19,12 @@ function findStickerCodeInFileName(fileName: string): Sticker | null {
   return null
 }
 
+function pickDemoSticker(file: File): Sticker {
+  const seedText = `${file.name}:${file.size}:${file.lastModified}`
+  const seed = Array.from(seedText).reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return albumStickers[Math.abs(seed) % albumStickers.length]
+}
+
 export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode = 'normal'): Promise<DetectedSticker[]> {
   await new Promise(resolve => setTimeout(resolve, 700))
 
@@ -33,7 +39,7 @@ export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode
     }))
   }
 
-  const sticker = findStickerCodeInFileName(file.name) ?? findStickerByCode('CUW4') ?? albumStickers[0]
+  const sticker = findStickerCodeInFileName(file.name) ?? pickDemoSticker(file)
 
   return [{
     id: `${sticker.codigoFigura}-0`,

@@ -257,7 +257,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
           )}
         </div>
 
-        <div className="flex-shrink-0 p-4 bg-white border-t border-zinc-200/60 shadow-[0_-4px_15px_rgba(0,0,0,0.02)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="flex-shrink-0 p-4 md:pb-8 bg-white border-t border-zinc-200/60 shadow-[0_-4px_15px_rgba(0,0,0,0.02)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {flow.step === 'intro' && (
             <button onClick={pickPhoto} className="w-full bg-zinc-900 text-white font-bold py-3 px-4 rounded-2xl hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
               <ImagePlus className="w-5 h-5" strokeWidth={2.5} />
