@@ -11,8 +11,8 @@ interface Props {
 const tabs: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
   { id: 'resumen', label: 'Resumen', icon: <CheckCircle2 className="w-4 h-4" /> },
   { id: 'detalle', label: 'Detalle', icon: <ListChecks className="w-4 h-4" /> },
-  { id: 'comparar', label: 'Clasificación', icon: <Users className="w-4 h-4" /> },
-  { id: 'intercambios', label: 'Intercambios', icon: <RefreshCcw className="w-4 h-4" /> },
+  { id: 'comparar', label: 'Ranking', icon: <Users className="w-4 h-4" /> },
+  { id: 'intercambios', label: 'Canjes', icon: <RefreshCcw className="w-4 h-4" /> },
   { id: 'logros', label: 'Logros', icon: <Award className="w-4 h-4" /> },
 ]
 

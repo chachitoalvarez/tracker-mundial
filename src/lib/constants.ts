@@ -7,8 +7,8 @@ export type IntercambiosTab = (typeof INTERCAMBIOS_TABS)[number]
 export const TAB_LABELS: Record<Tab, string> = {
   resumen: 'Resumen',
   detalle: 'Detalle',
-  comparar: 'Clasificación',
-  intercambios: 'Intercambios',
+  comparar: 'Ranking',
+  intercambios: 'Canjes',
   logros: 'Logros',
 }
 
