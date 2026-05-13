@@ -52,9 +52,8 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
     setFlow({ step: 'detecting' })
     try {
       const detections = await detectStickersFromPhoto(file)
-      const totalDetected = detections.reduce((acc, item) => acc + item.quantity, 0)
 
-      if (totalDetected > 10) {
+      if (detections.length > 10) {
         setFlow({ step: 'too_many' })
         return
       }
@@ -83,7 +82,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
 
   const confirm = () => {
     if (flow.step !== 'review') return
-    if (flow.detections.reduce((acc, item) => acc + item.quantity, 0) > 10) {
+    if (normalizeDetections(flow.detections).length > 10) {
       setFlow({ step: 'too_many' })
       return
     }
