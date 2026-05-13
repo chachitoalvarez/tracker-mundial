@@ -1,113 +1,94 @@
-import type { AlbumSection, PlayerInfo } from '@/types/album'
+import rawData from './panini_mundial_2026_album_base_980.json'
+import type { Sticker, AlbumSection, StickerType } from '@/types/album'
 
-const playersData: Record<string, PlayerInfo[]> = {
-  'Argentina': [
-    { number: 1, name: 'Emiliano Martínez' },
-    { number: 2, name: 'Geronimo Rulli' },
-    { number: 3, name: 'Nahuel Molina' },
-    { number: 4, name: 'Cristian Romero' },
-    { number: 5, name: 'Nicolás Otamendi' },
-    { number: 6, name: 'Germán Pezzella' },
-    { number: 7, name: 'Nicolás Tagliafico' },
-    { number: 8, name: 'Rodrigo De Paul' },
-    { number: 9, name: 'Leandro Paredes' },
-    { number: 10, name: 'Enzo Fernández' },
-    { number: 11, name: 'Alexis Mac Allister' },
-    { number: 12, name: 'Guido Rodríguez' },
-    { number: 13, name: 'Lionel Messi', role: 'captain' },
-    { number: 14, name: 'Lautaro Martínez' },
-    { number: 15, name: 'Julián Álvarez' },
-    { number: 16, name: 'Ángel Di María' },
-    { number: 17, name: 'Paulo Dybala' },
-    { number: 18, name: 'Nicolás González' },
-    { number: 19, name: 'Marcos Acuña' },
-    { number: 20, name: 'Valentín Carboni' },
-  ],
-  'Brasil': [
-    { number: 1, name: 'Alisson' },
-    { number: 2, name: 'Ederson' },
-    { number: 3, name: 'Danilo', role: 'captain' },
-    { number: 4, name: 'Marquinhos' },
-    { number: 5, name: 'Thiago Silva' },
-    { number: 6, name: 'Éder Militão' },
-    { number: 7, name: 'Alex Sandro' },
-    { number: 8, name: 'Renan Lodi' },
-    { number: 9, name: 'Casemiro' },
-    { number: 10, name: 'Neymar Jr', role: 'special' },
-    { number: 11, name: 'Lucas Paquetá' },
-    { number: 12, name: 'Vinícius Jr' },
-    { number: 13, name: 'Rodrygo' },
-    { number: 14, name: 'Gabriel Jesus' },
-    { number: 15, name: 'Richarlison' },
-    { number: 16, name: 'Raphinha' },
-    { number: 17, name: 'Bruno Guimarães' },
-    { number: 18, name: 'Fred' },
-    { number: 19, name: 'Antony' },
-    { number: 20, name: 'Gabriel Martinelli' },
-  ],
-  // TODO: completar nombres oficiales del Mundial 2026 para el resto de selecciones
+interface RawSection {
+  seccion: string
+  subseccion: string
+  codigo_rango: string
+  orden_inicio: number
+  orden_fin: number
+  cantidad: number
 }
 
-const rawData: Array<{ section: string; needed: number; collected: number[] }> = [
-  { section: 'Argentina', needed: 20, collected: [] },
-  { section: 'Argelia', needed: 20, collected: [] },
-  { section: 'Australia', needed: 20, collected: [] },
-  { section: 'Austria', needed: 20, collected: [] },
-  { section: 'Bélgica', needed: 20, collected: [] },
-  { section: 'Bosnia y Herzegovina', needed: 20, collected: [] },
-  { section: 'Brasil', needed: 20, collected: [] },
-  { section: 'Canadá', needed: 20, collected: [] },
-  { section: 'Cabo Verde', needed: 20, collected: [] },
-  { section: 'Colombia', needed: 20, collected: [] },
-  { section: 'Congo DR', needed: 20, collected: [] },
-  { section: 'Croacia', needed: 20, collected: [] },
-  { section: 'Curaçao', needed: 20, collected: [] },
-  { section: 'Chequia', needed: 20, collected: [] },
-  { section: 'Ecuador', needed: 20, collected: [] },
-  { section: 'Egipto', needed: 20, collected: [] },
-  { section: 'Inglaterra', needed: 20, collected: [] },
-  { section: 'Francia', needed: 20, collected: [] },
-  { section: 'Alemania', needed: 20, collected: [] },
-  { section: 'Ghana', needed: 20, collected: [] },
-  { section: 'Haití', needed: 20, collected: [] },
-  { section: 'Irán', needed: 20, collected: [] },
-  { section: 'Irak', needed: 20, collected: [] },
-  { section: 'Costa de Marfil', needed: 20, collected: [] },
-  { section: 'Japón', needed: 20, collected: [] },
-  { section: 'Jordania', needed: 20, collected: [] },
-  { section: 'México', needed: 20, collected: [] },
-  { section: 'Marruecos', needed: 20, collected: [] },
-  { section: 'Países Bajos', needed: 20, collected: [] },
-  { section: 'Nueva Zelanda', needed: 20, collected: [] },
-  { section: 'Noruega', needed: 20, collected: [] },
-  { section: 'Panamá', needed: 20, collected: [] },
-  { section: 'Paraguay', needed: 20, collected: [] },
-  { section: 'Portugal', needed: 20, collected: [] },
-  { section: 'Qatar', needed: 20, collected: [] },
-  { section: 'Arabia Saudita', needed: 20, collected: [] },
-  { section: 'Escocia', needed: 20, collected: [] },
-  { section: 'Senegal', needed: 20, collected: [] },
-  { section: 'Sudáfrica', needed: 20, collected: [] },
-  { section: 'Corea del Sur', needed: 20, collected: [] },
-  { section: 'España', needed: 20, collected: [] },
-  { section: 'Suecia', needed: 20, collected: [] },
-  { section: 'Suiza', needed: 20, collected: [] },
-  { section: 'Túnez', needed: 20, collected: [] },
-  { section: 'Turquía', needed: 20, collected: [] },
-  { section: 'Uruguay', needed: 20, collected: [] },
-  { section: 'Estados Unidos', needed: 20, collected: [] },
-  { section: 'Uzbekistán', needed: 20, collected: [] },
-  { section: 'FIFA Museum / campeones históricos', needed: 11, collected: [] },
-  { section: 'Introducción / oficiales FIFA World Cup 2026', needed: 9, collected: [] },
-]
+interface RawSticker {
+  numero_orden: number
+  seccion: string
+  subseccion: string
+  codigo_figura: string
+  codigo_alias: string
+  pais_equipo: string
+  nombre_figura: string
+  tipo_figura: string
+  notas: string
+  album_layer: string
+}
 
-export const albumData: AlbumSection[] = rawData.map(item => {
-  const collected: Record<number, number> = {}
-  item.collected.forEach(num => { collected[num] = 1 })
-  return {
-    section: item.section,
-    needed: item.needed,
-    collected,
-    players: playersData[item.section],
-  }
-})
+// Extraer el prefijo del código_rango (ej: "ARG001-ARG020" → "ARG", "PL000" → "PL")
+function extractBaseCode(rango: string): string {
+  return rango.split(/\d/)[0]
+}
+
+export const albumMeta = {
+  id: rawData.album.id,
+  nombre: rawData.album.nombre,
+  totalFiguritas: rawData.album.total_figuritas_base,
+  totalSelecciones: rawData.album.total_selecciones,
+}
+
+export const albumSections: AlbumSection[] = (rawData.secciones as RawSection[]).map(s => ({
+  section: s.subseccion,
+  needed: s.cantidad,
+  collected: {},
+  seccion: s.seccion,
+  subseccion: s.subseccion,
+  codigoBase: extractBaseCode(s.codigo_rango),
+  ordenInicio: s.orden_inicio,
+  ordenFin: s.orden_fin,
+  cantidad: s.cantidad,
+}))
+
+export const albumData: AlbumSection[] = albumSections
+
+export const albumStickers: Sticker[] = (rawData.figuritas as RawSticker[]).map(f => ({
+  numeroOrden: f.numero_orden,
+  seccion: f.seccion,
+  subseccion: f.subseccion,
+  codigoFigura: f.codigo_figura,
+  codigoAlias: f.codigo_alias,
+  paisEquipo: f.pais_equipo,
+  nombreFigura: f.nombre_figura,
+  tipoFigura: f.tipo_figura as StickerType,
+  notas: f.notas,
+  albumLayer: f.album_layer,
+}))
+
+// Integrity check
+if (albumStickers.length !== 980) {
+  console.error('Album integrity check failed:', albumStickers.length)
+}
+
+// Índice por código canónico para lookup O(1)
+export const stickersByCode: Map<string, Sticker> = new Map(
+  albumStickers.map(s => [s.codigoFigura, s])
+)
+
+// Índice por subsección para agrupar
+export const stickersBySubseccion: Map<string, Sticker[]> = albumStickers.reduce(
+  (acc, sticker) => {
+    const arr = acc.get(sticker.subseccion) ?? []
+    arr.push(sticker)
+    acc.set(sticker.subseccion, arr)
+    return acc
+  },
+  new Map<string, Sticker[]>()
+)
+
+export const stickerCodesBySubseccion: Map<string, Set<string>> = albumStickers.reduce(
+  (acc, sticker) => {
+    const codes = acc.get(sticker.subseccion) ?? new Set<string>()
+    codes.add(sticker.codigoFigura)
+    acc.set(sticker.subseccion, codes)
+    return acc
+  },
+  new Map<string, Set<string>>()
+)

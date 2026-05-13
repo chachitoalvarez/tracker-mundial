@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { albumData as initialAlbumData } from '@/data/albumData'
 import type { AlbumSection, DetailFilter } from '@/types/album'
 import { computeStats } from '@/lib/stats'
+import { findStickerByCode, formatStickerDisplayId } from '@/lib/album'
 import { type Tab } from '@/lib/constants'
 import * as albumService from '@/services/album.service'
 
@@ -9,6 +10,7 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
   const [albumData, setAlbumData] = useState<AlbumSection[]>(initialAlbumData)
   const [isLoadingAlbum, setIsLoadingAlbum] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [stickerSearchTerm, setStickerSearchTerm] = useState('')
   const [selectedSection, setSelectedSection] = useState<string>('all')
   const [detailFilter, setDetailFilter] = useState<DetailFilter>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -43,22 +45,22 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     ? albumData.find(s => s.section === selectedSection) ?? null
     : null
 
-  const updateStickerCount = (sectionName: string, stickerNum: number, delta: number) => {
+  const updateStickerCount = (sectionName: string, stickerCode: string, delta: number) => {
     setAlbumData(prev => {
       const next = prev.map(item => {
         if (item.section !== sectionName) return item
-        const currentCount = item.collected[stickerNum] ?? 0
+        const currentCount = item.collected[stickerCode] ?? 0
         const newCount = Math.max(0, currentCount + delta)
 
         if (currentCount === 0 && newCount === 1) {
-          triggerCelebration('sticker', `¡Figurita pegada!\n${sectionName} #${stickerNum}`, 'star')
+          triggerCelebration('sticker', `Figurita pegada!\n${sectionName} ${formatStickerDisplayId(stickerCode)}`, 'star')
         }
 
         const newCollected = { ...item.collected }
         if (newCount === 0) {
-          delete newCollected[stickerNum]
+          delete newCollected[stickerCode]
         } else {
-          newCollected[stickerNum] = newCount
+          newCollected[stickerCode] = newCount
         }
         return { ...item, collected: newCollected }
       })
@@ -69,7 +71,16 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
 
   const handleGoToDetail = (sectionName: string, setActiveTab: (tab: Tab) => void) => {
     setSelectedSection(sectionName)
+    setStickerSearchTerm('')
     setActiveTab('detalle')
+  }
+
+  const jumpToStickerCode = (query: string) => {
+    const sticker = findStickerByCode(query)
+    if (!sticker) return false
+    setSelectedSection(sticker.subseccion)
+    setStickerSearchTerm(query)
+    return true
   }
 
   return {
@@ -80,11 +91,14 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     currentSectionData,
     searchTerm,
     setSearchTerm,
+    stickerSearchTerm,
+    setStickerSearchTerm,
     selectedSection,
     setSelectedSection,
     detailFilter,
     setDetailFilter,
     updateStickerCount,
     handleGoToDetail,
+    jumpToStickerCode,
   }
 }

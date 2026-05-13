@@ -5,7 +5,7 @@ import { useCelebration } from '@/hooks/useCelebration'
 import { useAlbum } from '@/hooks/useAlbum'
 import { useAchievements } from '@/hooks/useAchievements'
 import { useTrades } from '@/hooks/useTrades'
-import { useChat } from '@/hooks/useChat'
+import { ChatProvider, useChat } from '@/contexts/ChatContext'
 import { useGroups } from '@/hooks/useGroups'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 
@@ -16,7 +16,6 @@ import { CompararView } from '@/views/CompararView'
 import { IntercambiosView } from '@/views/IntercambiosView'
 import { LogrosView } from '@/views/LogrosView'
 
-import { MainHeader } from '@/components/layout/MainHeader'
 import { ContextualHeader } from '@/components/layout/ContextualHeader'
 import { DesktopTabs } from '@/components/layout/DesktopTabs'
 import { BottomNav } from '@/components/layout/BottomNav'
@@ -41,30 +40,25 @@ function AppShell() {
 
   const {
     albumData, stats, filteredData, currentSectionData,
-    searchTerm, setSearchTerm, selectedSection, setSelectedSection,
+    searchTerm, setSearchTerm, stickerSearchTerm, setStickerSearchTerm,
+    selectedSection, setSelectedSection,
     detailFilter, setDetailFilter,
-    updateStickerCount, handleGoToDetail,
+    isLoadingAlbum, updateStickerCount, handleGoToDetail, jumpToStickerCode,
   } = useAlbum(triggerCelebration)
 
-  const { achievements, unlockedCount } = useAchievements(albumData, stats, triggerCelebration)
+  const { achievements, unlockedCount } = useAchievements(albumData, stats, isLoadingAlbum, triggerCelebration)
 
   const {
     likedByMe, likedByThem, connections, showMatchAnimation,
     currentTradeUser, isLoadingCandidates, unreadConnectionsCount,
     handleSwipe, handleAcceptLike, handleRejectLike,
-    markConnectionRead, markConnectionUnread,
   } = useTrades(triggerCelebration)
 
-  const {
-    activeChatUser, setActiveChatUser,
-    chatMessage, setChatMessage,
-    chatHistory, isTyping,
-    handleOpenChat, handleSendMessage,
-  } = useChat(markConnectionRead, markConnectionUnread)
+  const { openChatWithUser, closeChat } = useChat()
 
   useEffect(() => {
-    if (isAuthenticated) setActiveChatUser(null)
-  }, [isAuthenticated, setActiveChatUser])
+    if (isAuthenticated) closeChat()
+  }, [isAuthenticated, closeChat])
 
   const {
     groups, isLoadingGroups, isCreatingGroup, createGroupError,
@@ -108,16 +102,12 @@ function AppShell() {
       {celebration && <CelebrationOverlay celebration={celebration} />}
 
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-        {activeTab === 'resumen' ? (
-          <MainHeader userName={userName} onProfileOpen={() => setIsProfileOpen(true)} />
-        ) : (
-          <ContextualHeader
-            activeTab={activeTab}
-            userName={userName}
-            unlockedAchievementsCount={unlockedCount}
-            onProfileOpen={() => setIsProfileOpen(true)}
-          />
-        )}
+        <ContextualHeader
+          activeTab={activeTab}
+          userName={userName}
+          unlockedAchievementsCount={unlockedCount}
+          onProfileOpen={() => setIsProfileOpen(true)}
+        />
 
         <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
           <div className={`bg-transparent sm:bg-white sm:rounded-[2rem] sm:shadow-sm sm:border sm:border-zinc-200/60 p-0 sm:p-6 overflow-clip sm:overflow-visible${activeTab === 'detalle' ? ' -mt-4 sm:mt-0' : ''}`}>
@@ -144,11 +134,14 @@ function AppShell() {
                   albumData={albumData}
                   selectedSection={selectedSection}
                   setSelectedSection={setSelectedSection}
+                  stickerSearchTerm={stickerSearchTerm}
+                  setStickerSearchTerm={setStickerSearchTerm}
                   detailFilter={detailFilter}
                   setDetailFilter={setDetailFilter}
                   currentSectionData={currentSectionData}
                   stats={stats}
                   onUpdateCount={updateStickerCount}
+                  onJumpToStickerCode={jumpToStickerCode}
                 />
               )}
 
@@ -193,7 +186,7 @@ function AppShell() {
                   likedByThem={likedByThem}
                   unreadConnectionsCount={unreadConnectionsCount}
                   onSwipe={handleSwipe}
-                  onOpenChat={handleOpenChat}
+                  onOpenChat={(conn) => openChatWithUser(String(conn.id), conn.name)}
                   onAcceptLike={handleAcceptLike}
                   onRejectLike={handleRejectLike}
                 />
@@ -231,21 +224,13 @@ function AppShell() {
         <PublicProfileDrawer
           user={selectedPublicUser}
           onClose={() => setSelectedPublicUser(null)}
-          onProposeSwap={() => { setSelectedPublicUser(null); setActiveTab('intercambios') }}
+          onStartChat={(otherUserId, otherUsername, prefill) => {
+            openChatWithUser(otherUserId, otherUsername, prefill)
+          }}
         />
       )}
 
-      {activeChatUser && (
-        <ChatDrawer
-          user={activeChatUser}
-          history={chatHistory[activeChatUser.id] ?? []}
-          chatMessage={chatMessage}
-          setChatMessage={setChatMessage}
-          isTyping={isTyping}
-          onClose={() => setActiveChatUser(null)}
-          onSend={handleSendMessage}
-        />
-      )}
+      <ChatDrawer />
     </div>
   )
 }
@@ -253,9 +238,11 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <UIProvider>
-        <AppShell />
-      </UIProvider>
+      <ChatProvider>
+        <UIProvider>
+          <AppShell />
+        </UIProvider>
+      </ChatProvider>
     </AuthProvider>
   )
 }

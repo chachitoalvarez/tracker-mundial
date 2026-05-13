@@ -12,6 +12,9 @@
       "@/*": ["src/*"]
     },
 
+    /* JSON imports */
+    "resolveJsonModule": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

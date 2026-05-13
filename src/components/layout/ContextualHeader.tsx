@@ -1,7 +1,8 @@
-import { CheckCircle2, Users, RefreshCcw, Award, User } from 'lucide-react'
+import { ListChecks, CheckCircle2, Users, RefreshCcw, Award, User } from 'lucide-react'
 import type { Tab } from '@/lib/constants'
 
-const TAB_META: Partial<Record<Tab, { icon: React.ReactNode; label: string }>> = {
+const TAB_META: Record<Tab, { icon: React.ReactNode; label: string }> = {
+  resumen: { icon: <ListChecks className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />, label: 'Resumen' },
   detalle: { icon: <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />, label: 'Detalle por Figurita' },
   comparar: { icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />, label: 'Clasificación' },
   intercambios: { icon: <RefreshCcw className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />, label: 'Intercambios' },
@@ -17,7 +18,6 @@ interface Props {
 
 export function ContextualHeader({ activeTab, userName, unlockedAchievementsCount, onProfileOpen }: Props) {
   const meta = TAB_META[activeTab]
-  if (!meta) return null
 
   return (
     <header className="sticky top-2 z-40 bg-white/80 backdrop-blur-xl rounded-3xl px-4 sm:px-6 py-3 sm:py-4 shadow-sm border border-white flex justify-between items-center gap-4 transition-all duration-300 animate-in fade-in slide-in-from-top-4">

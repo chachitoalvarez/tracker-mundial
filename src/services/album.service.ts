@@ -1,36 +1,68 @@
 import { supabase } from '@/services/supabase'
-import { albumData as baseAlbumData } from '@/data/albumData'
-import type { AlbumSection, StickerCount } from '@/types/album'
+import { albumData as baseAlbumData, stickersBySubseccion, stickersByCode } from '@/data/albumData'
+import type { AlbumSection, UserStickerCount } from '@/types/album'
 import { LOCAL_STORAGE_KEY } from '@/lib/constants'
 
-type CollectedMap = Record<string, StickerCount>
+type LegacyCollectedMap = Record<string, Record<string, number>>
 
 const TOTAL_NEEDED = baseAlbumData.reduce((acc, s) => acc + s.needed, 0)
 
-function computeTotals(collected: CollectedMap): { uniqueCount: number; repeatedCount: number } {
+function computeTotals(collected: UserStickerCount): { uniqueCount: number; repeatedCount: number } {
   let uniqueCount = 0
   let repeatedCount = 0
-  for (const section of Object.values(collected)) {
-    for (const count of Object.values(section)) {
-      if (count > 0) uniqueCount++
-      if (count > 1) repeatedCount += count - 1
-    }
+  for (const count of Object.values(collected)) {
+    if (count > 0) uniqueCount++
+    if (count > 1) repeatedCount += count - 1
   }
   return { uniqueCount, repeatedCount }
 }
 
-function toCollectedMap(data: AlbumSection[]): CollectedMap {
-  const map: CollectedMap = {}
+function isPlainCountMap(value: unknown): value is UserStickerCount {
+  return !!value && typeof value === 'object' && Object.values(value).every(v => typeof v === 'number')
+}
+
+function migrateLegacyCollected(collected: LegacyCollectedMap): UserStickerCount {
+  const flat: UserStickerCount = {}
+  for (const [sectionName, sectionCounts] of Object.entries(collected)) {
+    const stickers = stickersBySubseccion.get(sectionName) ?? []
+    for (const [num, count] of Object.entries(sectionCounts)) {
+      if (count <= 0) continue
+      const sticker = stickers[Number(num) - 1]
+      if (sticker) flat[sticker.codigoFigura] = count
+    }
+  }
+  return flat
+}
+
+function normalizeCollectedPayload(value: unknown): UserStickerCount {
+  if (!value || typeof value !== 'object') return {}
+  if (isPlainCountMap(value)) {
+    return Object.fromEntries(
+      Object.entries(value).filter(([code, count]) => stickersByCode.has(code) && count > 0)
+    )
+  }
+  return migrateLegacyCollected(value as LegacyCollectedMap)
+}
+
+function toCollectedMap(data: AlbumSection[]): UserStickerCount {
+  const map: UserStickerCount = {}
   for (const s of data) {
-    if (Object.keys(s.collected).length > 0) map[s.section] = s.collected
+    for (const [code, count] of Object.entries(s.collected)) {
+      if (count > 0) map[code] = count
+    }
   }
   return map
 }
 
-function toAlbumData(collected: CollectedMap): AlbumSection[] {
+function toAlbumData(collectedPayload: unknown): AlbumSection[] {
+  const collected = normalizeCollectedPayload(collectedPayload)
   return baseAlbumData.map(s => ({
     ...s,
-    collected: (collected[s.section] ?? {}) as StickerCount,
+    collected: Object.fromEntries(
+      (stickersBySubseccion.get(s.section) ?? [])
+        .map(sticker => [sticker.codigoFigura, collected[sticker.codigoFigura] ?? 0] as const)
+        .filter(([, count]) => count > 0)
+    ),
   }))
 }
 
@@ -39,12 +71,14 @@ export async function getAlbumState(): Promise<{ data: AlbumSection[] | null; er
   if (!user) return { data: null, error: 'No hay sesión activa' }
 
   // Migrate from localStorage for first-time Supabase users
-  let migratedCollected: CollectedMap = {}
+  let migratedCollected: UserStickerCount = {}
   try {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (stored) {
-      const parsed: AlbumSection[] = JSON.parse(stored)
-      migratedCollected = toCollectedMap(parsed)
+      const parsed = JSON.parse(stored)
+      migratedCollected = Array.isArray(parsed)
+        ? toCollectedMap(parsed as AlbumSection[])
+        : normalizeCollectedPayload(parsed)
     }
   } catch { /* ignore */ }
 
@@ -61,7 +95,7 @@ export async function getAlbumState(): Promise<{ data: AlbumSection[] | null; er
     )
     .select('collected')
 
-  const upserted = (upsertedRows as { collected: CollectedMap }[] | null)?.[0] ?? null
+  const upserted = (upsertedRows as { collected: unknown }[] | null)?.[0] ?? null
   if (upserted) return { data: toAlbumData(upserted.collected), error: null }
 
   // Row already existed — fetch it
@@ -72,7 +106,7 @@ export async function getAlbumState(): Promise<{ data: AlbumSection[] | null; er
     .single()
 
   if (selectErr) return { data: null, error: selectErr.message }
-  return { data: toAlbumData(existing.collected as CollectedMap), error: null }
+  return { data: toAlbumData(existing.collected), error: null }
 }
 
 export async function saveAlbumState(albumData: AlbumSection[]): Promise<{ error: string | null }> {

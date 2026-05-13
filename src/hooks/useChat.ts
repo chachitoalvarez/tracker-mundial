@@ -1,58 +1,130 @@
-import { useState } from 'react'
-import type { Connection } from '@/types/trade'
-import type { ChatHistory } from '@/types/chat'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  getOrCreateConnection,
+  listConnections as fetchConnections,
+  listMessages,
+  sendMessage as sendMsg,
+  markAsRead,
+  subscribeToMessages,
+} from '@/services/chat.service'
+import type { ChatMessage, ChatConnection } from '@/types/chat'
 
-export function useChat(
-  markConnectionRead: (userId: string | number) => void,
-  markConnectionUnread: (userId: string | number) => void
-) {
-  const [activeChatUser, setActiveChatUser] = useState<Connection | null>(null)
-  const [chatMessage, setChatMessage] = useState('')
-  const [chatHistory, setChatHistory] = useState<ChatHistory>({})
-  const [isTyping, setIsTyping] = useState(false)
+interface ActiveConnection {
+  connectionId: string
+  otherUserId: string
+  otherUsername: string
+}
 
-  const handleOpenChat = (user: Connection) => {
-    setActiveChatUser(user)
-    markConnectionRead(user.id)
+export function useChat() {
+  const { sessionUserId } = useAuth()
 
-    if (!chatHistory[user.id]) {
-      setChatHistory(prev => ({
-        ...prev,
-        [user.id]: [
-          { sender: 'system' as const, text: 'Para tu seguridad, te recomendamos realizar los intercambios en lugares públicos y en horarios diurnos. Nunca transfieras dinero por adelantado ni compartas datos bancarios.' },
-        ],
-      }))
+  const [activeConnection, setActiveConnection] = useState<ActiveConnection | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [connections, setConnections] = useState<ChatConnection[]>([])
+
+  const unsubRef = useRef<(() => void) | null>(null)
+
+  /* ── Connections list ── */
+
+  const refreshConnections = useCallback(async () => {
+    const { data } = await fetchConnections()
+    setConnections(data)
+  }, [])
+
+  // Load connections on mount
+  useEffect(() => {
+    if (sessionUserId) refreshConnections()
+  }, [sessionUserId, refreshConnections])
+
+  /* ── Active conversation: load messages + realtime ── */
+
+  useEffect(() => {
+    if (!activeConnection) {
+      setMessages([])
+      if (unsubRef.current) { unsubRef.current(); unsubRef.current = null }
+      return
     }
-  }
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!chatMessage.trim() || !activeChatUser) return
+    let cancelled = false
+    setIsLoadingMessages(true)
 
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const connId = activeConnection.connectionId
 
-    setChatHistory(prev => ({
-      ...prev,
-      [activeChatUser.id]: [
-        ...(prev[activeChatUser.id] ?? []),
-        { sender: 'me' as const, text: chatMessage, time: currentTime },
-      ],
-    }))
-    setChatMessage('')
-    markConnectionUnread(activeChatUser.id)
+    listMessages(connId).then(({ data }) => {
+      if (cancelled) return
+      setMessages(data)
+      setIsLoadingMessages(false)
+      markAsRead(connId)
+    })
 
-    // TODO: send message via Supabase realtime
-    setIsTyping(false)
-  }
+    // Realtime subscription — single source of truth for new messages
+    const unsub = subscribeToMessages(connId, (msg) => {
+      setMessages(prev => {
+        // Dedup: skip if already present
+        if (prev.some(m => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+      if (msg.senderId !== sessionUserId) {
+        markAsRead(connId)
+      }
+    })
+    unsubRef.current = unsub
+
+    return () => {
+      cancelled = true
+      unsub()
+      unsubRef.current = null
+    }
+  }, [activeConnection?.connectionId, sessionUserId])
+
+  /* ── Actions ── */
+
+  const openChatWithUser = useCallback(async (otherUserId: string, otherUsername: string, prefillInput?: string) => {
+    const { connectionId, error } = await getOrCreateConnection(otherUserId)
+    if (error || !connectionId) {
+      console.error('[useChat] Failed to get/create connection:', error)
+      return
+    }
+    setActiveConnection({ connectionId, otherUserId, otherUsername })
+    setChatInput(prefillInput ?? '')
+    refreshConnections()
+  }, [refreshConnections])
+
+  const sendMessage = useCallback(async () => {
+    if (!chatInput.trim() || !activeConnection) return
+
+    const contentToSend = chatInput.trim()
+    setChatInput('') // optimistic clear
+
+    const { error } = await sendMsg(activeConnection.connectionId, contentToSend)
+    if (error) {
+      console.error('[useChat] Send failed:', error)
+      setChatInput(contentToSend) // restore input on failure
+      return
+    }
+    // Do NOT append message here — realtime subscription handles it
+    refreshConnections()
+  }, [chatInput, activeConnection, refreshConnections])
+
+  const closeChat = useCallback(() => {
+    setActiveConnection(null)
+    setChatInput('')
+  }, [])
 
   return {
-    activeChatUser,
-    setActiveChatUser,
-    chatMessage,
-    setChatMessage,
-    chatHistory,
-    isTyping,
-    handleOpenChat,
-    handleSendMessage,
+    activeConnection,
+    messages,
+    chatInput,
+    setChatInput,
+    isLoadingMessages,
+    connections,
+    sessionUserId,
+    refreshConnections,
+    openChatWithUser,
+    sendMessage,
+    closeChat,
   }
 }

@@ -1,15 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
-import { X, User, RefreshCcw, Trophy, Package, Lock, AlertCircle } from 'lucide-react'
+import { X, User, RefreshCcw, Trophy, Package, Lock, AlertCircle, MessageCircle } from 'lucide-react'
 import { getTradeMatch } from '@/services/trades.service'
 import { TradeStickerGroup } from '@/features/intercambios/TradeStickerGroup'
 import { TradeBalanceBar } from '@/features/intercambios/TradeBalanceBar'
+import { describeStickerCode, getStickerByCanonicalCode } from '@/lib/album'
 import type { LeaderboardEntry } from '@/types/user'
 import type { TradeMatch } from '@/types/trade'
 
 interface Props {
   user: LeaderboardEntry
   onClose: () => void
-  onProposeSwap: () => void
+  onStartChat: (otherUserId: string, otherUsername: string, prefill?: string) => void
 }
 
 type MatchState =
@@ -18,19 +19,39 @@ type MatchState =
   | { status: 'error'; message: string }
   | { status: 'ok'; match: TradeMatch }
 
-export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
+function buildPrefill(match: TradeMatch, theirUsername: string): string {
+  const lines = [`Hola @${theirUsername}! Vi que tenemos cruce de figuritas.`]
+  if (match.theyOfferCount > 0) {
+    const sample = Object.keys(match.theyOffer).slice(0, 5).map(describeStickerCode)
+    lines.push(`Me interesan: ${sample.join(', ')}${match.theyOfferCount > 5 ? '...' : ''}`)
+  }
+  if (match.iOfferCount > 0) {
+    const sample = Object.keys(match.iOffer).slice(0, 5).map(describeStickerCode)
+    lines.push(`Te entrego: ${sample.join(', ')}${match.iOfferCount > 5 ? '...' : ''}`)
+  }
+  lines.push('Lo coordinamos?')
+  return lines.join('\n')
+}
+
+function groupBySubsection(stickers: Record<string, number>): Record<string, Record<string, number>> {
+  return Object.entries(stickers).reduce<Record<string, Record<string, number>>>((acc, [code, count]) => {
+    const sticker = getStickerByCanonicalCode(code)
+    const section = sticker?.subseccion ?? 'Otras figuritas'
+    acc[section] = { ...(acc[section] ?? {}), [code]: count }
+    return acc
+  }, {})
+}
+
+export function PublicProfileDrawer({ user, onClose, onStartChat }: Props) {
   const completed = user.completed ?? 0
   const needed = user.needed ?? 0
   const repeated = user.repeated ?? 0
   const percentage = needed > 0 ? Math.round((completed / needed) * 100) : 0
-
   const [matchState, setMatchState] = useState<MatchState>({ status: 'loading' })
 
   const loadMatch = useCallback(() => {
-    console.log('[PublicProfileDrawer] Fetching match for:', user.id)
     setMatchState({ status: 'loading' })
     getTradeMatch(String(user.id)).then(result => {
-      console.log('[PublicProfileDrawer] Got match result:', result)
       if (!result.ok) {
         setMatchState(
           result.reason === 'not_accessible'
@@ -48,31 +69,26 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
   const noMatch = matchState.status === 'ok' &&
     matchState.match.theyOfferCount === 0 && matchState.match.iOfferCount === 0
 
+  const groupedTheyOffer = matchState.status === 'ok' ? groupBySubsection(matchState.match.theyOffer) : {}
+  const groupedIOffer = matchState.status === 'ok' ? groupBySubsection(matchState.match.iOffer) : {}
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-zinc-900/60 backdrop-blur-sm animate-in fade-in">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="w-full md:w-[400px] bg-zinc-50 h-[100dvh] shadow-2xl flex flex-col relative z-10 animate-in slide-in-from-right-8 duration-300 rounded-l-[2rem] md:rounded-l-none overflow-hidden">
-
-        {/* Sección 1 — Header compacto */}
         <div className="flex-shrink-0 px-5 py-4 bg-white border-b border-zinc-200/60 flex items-center gap-3 pt-[calc(1rem+env(safe-area-inset-top))]">
           <div className="w-10 h-10 rounded-full bg-zinc-100 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0">
             <User className="w-5 h-5 text-zinc-400" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-            <p className="text-base font-black text-zinc-900 tracking-tight truncate">
-              @{user.name || 'usuario'}
-            </p>
+            <p className="text-base font-black text-zinc-900 tracking-tight truncate">@{user.name || 'usuario'}</p>
             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Coleccionista</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0"
-          >
+          <button onClick={onClose} className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0">
             <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Sección 2 — Métricas */}
         <div className="flex-shrink-0 bg-zinc-100/60 p-4 border-b border-zinc-200/60">
           <div className="grid grid-cols-4 gap-2">
             {[
@@ -89,33 +105,17 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
           </div>
         </div>
 
-        {/* Sección 3 — Cruce de figuritas */}
-        {matchState.status === 'ok' && (() => { console.log('[PPDrawer RENDER]', {
-          status: matchState.status,
-          theyOfferCount: matchState.match.theyOfferCount,
-          iOfferCount: matchState.match.iOfferCount,
-          theyOfferKeys: Object.keys(matchState.match.theyOffer),
-          iOfferKeys: Object.keys(matchState.match.iOffer),
-          theyOfferFull: JSON.stringify(matchState.match.theyOffer),
-          iOfferFull: JSON.stringify(matchState.match.iOffer),
-          noMatch,
-        }); return null })()}
         <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide bg-white">
-
           {matchState.status === 'loading' && (
             <div className="p-5 space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-8 bg-zinc-100 rounded-xl animate-pulse" />
-              ))}
+              {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-zinc-100 rounded-xl animate-pulse" />)}
             </div>
           )}
 
           {matchState.status === 'not_accessible' && (
             <div className="flex flex-col items-center justify-center text-center p-8 h-full gap-3">
               <Lock className="w-8 h-8 text-zinc-300" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-zinc-500 max-w-[260px]">
-                Este coleccionista mantiene su perfil privado. Solo es visible si compartís un grupo con él.
-              </p>
+              <p className="text-sm font-medium text-zinc-500 max-w-[260px]">Este coleccionista mantiene su perfil privado. Solo es visible si compartis un grupo con el.</p>
             </div>
           )}
 
@@ -125,12 +125,7 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-red-700">No pudimos cargar las figuritas para intercambiar.</p>
-                  <button
-                    onClick={loadMatch}
-                    className="text-xs font-bold text-red-600 underline mt-1 hover:text-red-800 transition-colors"
-                  >
-                    Intentá de nuevo
-                  </button>
+                  <button onClick={loadMatch} className="text-xs font-bold text-red-600 underline mt-1 hover:text-red-800 transition-colors">Intenta de nuevo</button>
                 </div>
               </div>
             </div>
@@ -145,31 +140,21 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
 
           {matchState.status === 'ok' && !noMatch && (
             <div className="p-4 space-y-4">
-
               {matchState.match.theyOfferCount > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Recibís</h3>
+                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Recibis</h3>
                     </div>
                     <span className="text-[11px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                       {matchState.match.theyOfferCount} {matchState.match.theyOfferCount === 1 ? 'figurita' : 'figuritas'}
                     </span>
                   </div>
                   <div className="space-y-1.5 bg-amber-50/40 border border-amber-100 rounded-2xl p-1.5">
-                    {Object.entries(matchState.match.theyOffer)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([section, stickers], idx) => (
-                        <TradeStickerGroup
-                          key={section}
-                          sectionName={section}
-                          stickers={stickers as Record<string, number>}
-                          variant="theyOffer"
-                          defaultOpen={idx === 0}
-                        />
-                      ))
-                    }
+                    {Object.entries(groupedTheyOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers], idx) => (
+                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="theyOffer" defaultOpen={idx === 0} />
+                    ))}
                   </div>
                 </section>
               )}
@@ -179,48 +164,57 @@ export function PublicProfileDrawer({ user, onClose, onProposeSwap }: Props) {
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       <RefreshCcw className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Entregás</h3>
+                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Entregas</h3>
                     </div>
                     <span className="text-[11px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
                       {matchState.match.iOfferCount} {matchState.match.iOfferCount === 1 ? 'figurita' : 'figuritas'}
                     </span>
                   </div>
                   <div className="space-y-1.5 bg-blue-50/40 border border-blue-100 rounded-2xl p-1.5">
-                    {Object.entries(matchState.match.iOffer)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([section, stickers], idx) => (
-                        <TradeStickerGroup
-                          key={section}
-                          sectionName={section}
-                          stickers={stickers as Record<string, number>}
-                          variant="iOffer"
-                          defaultOpen={idx === 0}
-                        />
-                      ))
-                    }
+                    {Object.entries(groupedIOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers], idx) => (
+                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="iOffer" defaultOpen={idx === 0} />
+                    ))}
                   </div>
                 </section>
               )}
 
-              <TradeBalanceBar
-                theyCount={matchState.match.theyOfferCount}
-                iCount={matchState.match.iOfferCount}
-              />
-
+              <TradeBalanceBar theyCount={matchState.match.theyOfferCount} iCount={matchState.match.iOfferCount} />
             </div>
           )}
         </div>
 
-        {/* Sección 4 — Footer con CTA */}
         <div className="flex-shrink-0 p-4 bg-white border-t border-zinc-200/60 shadow-[0_-4px_15px_rgba(0,0,0,0.02)] pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <button
-            onClick={onProposeSwap}
-            className="w-full bg-zinc-900 text-white font-bold py-3 px-4 rounded-2xl hover:bg-zinc-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            <RefreshCcw className="w-5 h-5" strokeWidth={2.5} /> Proponer Intercambio
-          </button>
-        </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const username = user.name || 'usuario'
+                onStartChat(String(user.id), username)
+                onClose()
+              }}
+              className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 hover:border-zinc-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="w-5 h-5" strokeWidth={2.5} />
+              <span>Chatear</span>
+            </button>
 
+            <button
+              onClick={() => {
+                const username = user.name || 'usuario'
+                let prefill = `Hola @${username}!`
+                if (matchState.status === 'ok' && (matchState.match.theyOfferCount > 0 || matchState.match.iOfferCount > 0)) {
+                  prefill = buildPrefill(matchState.match, username)
+                }
+                onStartChat(String(user.id), username, prefill)
+                onClose()
+              }}
+              disabled={matchState.status === 'ok' && matchState.match.theyOfferCount === 0 && matchState.match.iOfferCount === 0}
+              className="flex-[2] bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:hover:transform-none disabled:hover:shadow-none transition-all flex items-center justify-center gap-2"
+            >
+              <RefreshCcw className="w-5 h-5" strokeWidth={2.5} />
+              <span>Proponer Intercambio</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

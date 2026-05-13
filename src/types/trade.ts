@@ -13,8 +13,8 @@ export interface Connection extends TradeUser {
 }
 
 export interface TradeMatch {
-  theyOffer: Record<string, Record<string, number>>
-  iOffer: Record<string, Record<string, number>>
+  theyOffer: Record<string, number>
+  iOffer: Record<string, number>
   theyOfferCount: number
   iOfferCount: number
 }

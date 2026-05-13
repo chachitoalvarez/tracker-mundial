@@ -1,7 +1,18 @@
 export interface ChatMessage {
-  sender: 'me' | 'them' | 'system'
-  text: string
-  time?: string
+  id: string
+  connectionId: string
+  senderId: string
+  content: string
+  createdAt: string
+  readAt: string | null
 }
 
-export type ChatHistory = Record<string, ChatMessage[]>
+export interface ChatConnection {
+  connectionId: string
+  otherUserId: string
+  otherUsername: string
+  lastMessageContent: string | null
+  lastMessageAt: string | null
+  lastMessageSender: string | null
+  unreadCount: number
+}

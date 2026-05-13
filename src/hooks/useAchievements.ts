@@ -5,6 +5,7 @@ import type { Achievement } from '@/types/achievement'
 export function useAchievements(
   albumData: AlbumSection[],
   stats: AlbumStats,
+  isLoadingAlbum: boolean,
   triggerCelebration: (type: 'sticker' | 'achievement' | 'match', msg: string, icon: string) => void
 ) {
   const achievements = useMemo((): Achievement[] => {
@@ -28,17 +29,22 @@ export function useAchievements(
     ]
   }, [stats, albumData])
 
-  // null = not yet initialized (skip celebration on first render)
+  // null = not yet initialized (waiting for album to load from Supabase)
   const previousUnlockedIdsRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
+    // Don't initialize until album data has loaded from Supabase
+    if (isLoadingAlbum) return
+
     const currentUnlocked = new Set(achievements.filter(a => a.unlocked).map(a => a.id))
 
+    // First time with real data: seed the ref, do NOT celebrate
     if (previousUnlockedIdsRef.current === null) {
       previousUnlockedIdsRef.current = currentUnlocked
       return
     }
 
+    // Detect locked → unlocked transitions
     const prev = previousUnlockedIdsRef.current
     for (const id of currentUnlocked) {
       if (!prev.has(id)) {
@@ -50,7 +56,7 @@ export function useAchievements(
     }
 
     previousUnlockedIdsRef.current = currentUnlocked
-  }, [achievements, triggerCelebration])
+  }, [achievements, isLoadingAlbum, triggerCelebration])
 
   const unlockedCount = achievements.filter(a => a.unlocked).length
 
