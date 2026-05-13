@@ -1,4 +1,5 @@
 import { albumStickers } from '@/data/albumData'
+import { findStickerByCode } from '@/lib/album'
 import type { Sticker } from '@/types/album'
 
 export interface DetectedSticker {
@@ -9,13 +10,13 @@ export interface DetectedSticker {
 
 export type ScanMockMode = 'normal' | 'empty' | 'too_many'
 
-function pickSticker(seed: number): Sticker {
-  const index = Math.abs(seed) % albumStickers.length
-  return albumStickers[index]
-}
-
-function getSeed(file: File): number {
-  return Array.from(file.name).reduce((acc, char) => acc + char.charCodeAt(0), file.size || 1)
+function findStickerCodeInFileName(fileName: string): Sticker | null {
+  const matches = fileName.toUpperCase().match(/[A-Z]{2,4}[\s_-]?\d{1,3}/g) ?? []
+  for (const match of matches) {
+    const sticker = findStickerByCode(match)
+    if (sticker) return sticker
+  }
+  return null
 }
 
 export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode = 'normal'): Promise<DetectedSticker[]> {
@@ -24,24 +25,19 @@ export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode
   // Mock temporal: reemplazar esta función por OCR/IA real cuando exista el backend de detección.
   if (mode === 'empty' || file.name.toLowerCase().includes('empty')) return []
 
-  const seed = getSeed(file)
-  const total = mode === 'too_many' || file.name.toLowerCase().includes('many')
-    ? 12
-    : Math.min(6, Math.max(2, (seed % 5) + 2))
-
-  const counts = new Map<string, { sticker: Sticker; quantity: number }>()
-  for (let i = 0; i < total; i += 1) {
-    const sticker = pickSticker(seed + i * 37)
-    const current = counts.get(sticker.codigoFigura)
-    counts.set(sticker.codigoFigura, {
+  if (mode === 'too_many' || file.name.toLowerCase().includes('many')) {
+    return albumStickers.slice(0, 11).map((sticker, index) => ({
+      id: `${sticker.codigoFigura}-${index}`,
       sticker,
-      quantity: (current?.quantity ?? 0) + 1,
-    })
+      quantity: 1,
+    }))
   }
 
-  return Array.from(counts.values()).map((item, index) => ({
-    id: `${item.sticker.codigoFigura}-${index}`,
-    sticker: item.sticker,
-    quantity: item.quantity,
-  }))
+  const sticker = findStickerCodeInFileName(file.name) ?? findStickerByCode('CUW4') ?? albumStickers[0]
+
+  return [{
+    id: `${sticker.codigoFigura}-0`,
+    sticker,
+    quantity: 1,
+  }]
 }
