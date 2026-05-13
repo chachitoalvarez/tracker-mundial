@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { X, User, RefreshCcw, Trophy, Package, Lock, AlertCircle, MessageCircle } from 'lucide-react'
+import { X, User, RefreshCcw, Trophy, Lock, AlertCircle, MessageCircle, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { getTradeMatch } from '@/services/trades.service'
 import { TradeStickerGroup } from '@/features/intercambios/TradeStickerGroup'
 import { TradeBalanceBar } from '@/features/intercambios/TradeBalanceBar'
@@ -140,20 +140,22 @@ export function PublicProfileDrawer({ user, onClose, onStartChat }: Props) {
 
           {matchState.status === 'ok' && !noMatch && (
             <div className="p-4 space-y-4">
+              <TradeBalanceBar theyCount={matchState.match.theyOfferCount} iCount={matchState.match.iOfferCount} />
+
               {matchState.match.theyOfferCount > 0 && (
                 <section className="space-y-2">
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-amber-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Recibis</h3>
+                      <ArrowDownLeft className="w-4 h-4 text-amber-600" strokeWidth={2.5} />
+                      <h3 className="text-xs font-black text-amber-900 uppercase tracking-wider">Recibís</h3>
                     </div>
                     <span className="text-[11px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                       {matchState.match.theyOfferCount} {matchState.match.theyOfferCount === 1 ? 'figurita' : 'figuritas'}
                     </span>
                   </div>
                   <div className="space-y-1.5 bg-amber-50/40 border border-amber-100 rounded-2xl p-1.5">
-                    {Object.entries(groupedTheyOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers], idx) => (
-                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="theyOffer" defaultOpen={idx === 0} />
+                    {Object.entries(groupedTheyOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers]) => (
+                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="theyOffer" />
                     ))}
                   </div>
                 </section>
@@ -163,22 +165,20 @@ export function PublicProfileDrawer({ user, onClose, onStartChat }: Props) {
                 <section className="space-y-2">
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
-                      <RefreshCcw className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
-                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Entregas</h3>
+                      <ArrowUpRight className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
+                      <h3 className="text-xs font-black text-blue-900 uppercase tracking-wider">Entregás</h3>
                     </div>
                     <span className="text-[11px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
                       {matchState.match.iOfferCount} {matchState.match.iOfferCount === 1 ? 'figurita' : 'figuritas'}
                     </span>
                   </div>
                   <div className="space-y-1.5 bg-blue-50/40 border border-blue-100 rounded-2xl p-1.5">
-                    {Object.entries(groupedIOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers], idx) => (
-                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="iOffer" defaultOpen={idx === 0} />
+                    {Object.entries(groupedIOffer).sort(([a], [b]) => a.localeCompare(b)).map(([section, stickers]) => (
+                      <TradeStickerGroup key={section} sectionName={section} stickers={stickers} variant="iOffer" />
                     ))}
                   </div>
                 </section>
               )}
-
-              <TradeBalanceBar theyCount={matchState.match.theyOfferCount} iCount={matchState.match.iOfferCount} />
             </div>
           )}
         </div>
