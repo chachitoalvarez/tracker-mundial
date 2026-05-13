@@ -19,16 +19,11 @@ function findStickerCodeInFileName(fileName: string): Sticker | null {
   return null
 }
 
-function pickDemoSticker(file: File): Sticker {
-  const seedText = `${file.name}:${file.size}:${file.lastModified}`
-  const seed = Array.from(seedText).reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return albumStickers[Math.abs(seed) % albumStickers.length]
-}
-
 export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode = 'normal'): Promise<DetectedSticker[]> {
   await new Promise(resolve => setTimeout(resolve, 700))
 
-  // Mock temporal: reemplazar esta función por OCR/IA real cuando exista el backend de detección.
+  // Mock temporal: solo acepta códigos presentes en el nombre del archivo.
+  // Reemplazar por OCR/IA real para leer el contenido visual de la foto.
   if (mode === 'empty' || file.name.toLowerCase().includes('empty')) return []
 
   if (mode === 'too_many' || file.name.toLowerCase().includes('many')) {
@@ -39,7 +34,8 @@ export async function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode
     }))
   }
 
-  const sticker = findStickerCodeInFileName(file.name) ?? pickDemoSticker(file)
+  const sticker = findStickerCodeInFileName(file.name)
+  if (!sticker) return []
 
   return [{
     id: `${sticker.codigoFigura}-0`,
