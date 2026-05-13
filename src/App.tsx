@@ -43,7 +43,7 @@ function AppShell() {
     searchTerm, setSearchTerm, stickerSearchTerm, setStickerSearchTerm,
     selectedSection, setSelectedSection,
     detailFilter, setDetailFilter,
-    isLoadingAlbum, updateStickerCount, handleGoToDetail, jumpToStickerCode,
+    isLoadingAlbum, updateStickerCount, addScannedStickers, handleGoToDetail, jumpToStickerCode,
   } = useAlbum(triggerCelebration)
 
   const { achievements, unlockedCount } = useAchievements(albumData, stats, isLoadingAlbum, triggerCelebration)
@@ -162,6 +162,7 @@ function AppShell() {
                   currentSectionData={currentSectionData}
                   stats={stats}
                   onUpdateCount={updateStickerCount}
+                  onAddScannedStickers={addScannedStickers}
                   onJumpToStickerCode={jumpToStickerCode}
                 />
               )}
