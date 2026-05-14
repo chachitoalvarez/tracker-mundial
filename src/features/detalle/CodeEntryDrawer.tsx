@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Plus, SquareStack, X } from 'lucide-react'
-import { formatStickerDisplayId } from '@/lib/album'
-import { getDisplayStickerCode, normalizeStickerCode, parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
+import { parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
 import type { AlbumSection, Sticker } from '@/types/album'
 
 interface Props {
@@ -45,8 +44,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
 
   if (!isOpen) return null
 
-  const displayPreview = getDisplayStickerCode(prefix, number)
-  const normalizedPreview = prefix && number ? normalizeStickerCode(prefix, number) : null
   const canSearch = prefix.length === 3 && number.length > 0
   const validation = canSearch ? validateStickerCode(`${prefix}${number}`) : null
 
@@ -137,7 +134,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-black text-zinc-900 tracking-tight truncate">
-              {flow === 'review' ? 'Encontramos esta figurita' : 'Cargar figurita'}
+              Cargar figurita
             </p>
           </div>
           <button onClick={onClose} className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0">
@@ -196,13 +193,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                   </label>
                 </div>
 
-                <p className="text-sm font-bold text-zinc-900">
-                  Código a cargar: <span className="text-amber-600">{displayPreview || '—'}</span>
-                </p>
-
-                <p className="text-xs font-medium text-zinc-500">
-                  La app lo normaliza como <span className="font-bold text-zinc-700">{normalizedPreview || '—'}</span>
-                </p>
               </div>
 
               {error && (
@@ -216,34 +206,23 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           {flow === 'review' && selectedSticker && (
             <div className="p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Encontramos esta figurita</h2>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Confirma los datos</h2>
                 <p className="text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
-                  Revisala antes de guardarla en tu álbum.
+                  Revisá la figurita antes de guardarla.
                 </p>
               </div>
 
               <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-11 bg-white border border-zinc-200 rounded-xl flex items-center justify-center font-black text-amber-600 shadow-sm">
-                    {formatStickerDisplayId(selectedSticker.codigoFigura)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-zinc-900 truncate">
-                      {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
-                    </p>
-                    <p className="text-xs font-bold text-zinc-400 truncate">{selectedSticker.subseccion}</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-zinc-900 truncate">
+                    {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
+                  </p>
+                  <p className="text-xs font-bold text-zinc-400 truncate">{selectedSticker.subseccion}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm font-semibold text-zinc-700">
-                  <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2">
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Código</span>
-                    {formatStickerDisplayId(selectedSticker.codigoFigura)}
-                  </div>
-                  <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2">
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Estado</span>
-                    {getStatusLabel(currentCount)}
-                  </div>
+                <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700">
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Estado</span>
+                  {getStatusLabel(currentCount)}
                 </div>
 
                 <p className="text-sm font-medium text-zinc-600 leading-relaxed">
