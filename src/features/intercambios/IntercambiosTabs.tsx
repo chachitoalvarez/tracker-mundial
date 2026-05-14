@@ -1,5 +1,6 @@
 import { Compass, MessageCircle, ArrowUpRight, Inbox } from 'lucide-react'
 import type { IntercambiosTab } from '@/lib/constants'
+import { DESKTOP_CHIP_BASE, DESKTOP_ICON_SIZE } from '@/lib/toolbarStyles'
 
 interface Props {
   activeTab: IntercambiosTab
@@ -24,12 +25,12 @@ export function IntercambiosTabs({ activeTab, onTabChange, unreadConnectionsCoun
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`py-2.5 px-3 sm:px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
-              isActive ? 'bg-white text-amber-600 shadow-sm border border-zinc-200/50 flex-[2]' : 'bg-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 flex-1'
+            className={`${DESKTOP_CHIP_BASE} flex-1 rounded-xl duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+              isActive ? 'bg-white text-amber-600 shadow-sm border border-zinc-200/50 flex-[2]' : 'bg-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50'
             }`}
           >
             <div className="relative shrink-0 flex items-center justify-center">
-              {tab.icon}
+              <span className={DESKTOP_ICON_SIZE}>{tab.icon}</span>
               {(tab.badge ?? 0) > 0 && (
                 <span className="absolute -top-2 -right-2.5 bg-amber-500 text-white text-[9px] font-black min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full border-2 border-white shadow-sm">
                   {tab.badge}

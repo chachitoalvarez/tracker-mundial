@@ -118,7 +118,7 @@ function AppShell() {
   const goToDetail = (section: string) => handleGoToDetail(section, setTab)
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 p-3 sm:p-4 md:p-8 font-sans text-zinc-800 overflow-x-hidden pb-24 md:pb-8 relative">
+    <div className="min-h-screen bg-zinc-50/50 p-3 sm:p-4 lg:p-6 font-sans text-zinc-800 overflow-x-hidden pb-24 md:pb-8 relative">
       <style>{`
         @keyframes confettiFall {
           0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
@@ -138,7 +138,7 @@ function AppShell() {
 
       {celebration && <CelebrationOverlay celebration={celebration} />}
 
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      <div className="max-w-6xl mx-auto space-y-4 lg:space-y-5">
         <ContextualHeader
           activeTab={activeTab}
           userName={userName}
@@ -146,8 +146,8 @@ function AppShell() {
           onProfileOpen={() => setIsProfileOpen(true)}
         />
 
-        <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500">
-          <div className={`bg-transparent sm:bg-white sm:rounded-[2rem] sm:shadow-sm sm:border sm:border-zinc-200/60 p-0 sm:p-6 overflow-clip sm:overflow-visible${activeTab === 'detalle' ? ' -mt-4 sm:mt-0' : ''}`}>
+        <div className="space-y-4 lg:space-y-5 animate-in fade-in duration-500">
+          <div className={`bg-transparent sm:bg-white sm:rounded-[2rem] sm:shadow-sm sm:border sm:border-zinc-200/60 p-0 sm:p-5 lg:p-4 overflow-clip sm:overflow-visible${activeTab === 'detalle' ? ' -mt-4 sm:mt-0' : ''}`}>
             <DesktopTabs
               activeTab={activeTab}
               onTabChange={setTab}

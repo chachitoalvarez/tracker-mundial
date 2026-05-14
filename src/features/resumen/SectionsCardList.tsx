@@ -19,13 +19,13 @@ export function SectionsCardList({ data, onGoToDetail }: Props) {
         return (
           <div
             key={index}
-            className="p-5 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-colors cursor-pointer group"
+            className="p-5 lg:p-4 bg-white hover:bg-zinc-50 active:bg-zinc-100 transition-colors cursor-pointer group"
             onClick={() => onGoToDetail(item.section)}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 lg:mb-3">
               <div className="flex items-center gap-3">
                 <SectionAvatar section={item} size="md" />
-                <span className="font-black text-zinc-900 text-lg tracking-tight">{item.section}</span>
+                <span className="font-black text-zinc-900 text-lg lg:text-base tracking-tight">{item.section}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm ${
@@ -35,7 +35,7 @@ export function SectionsCardList({ data, onGoToDetail }: Props) {
                 <ChevronRight className="w-5 h-5 text-zinc-300 group-active:translate-x-1 transition-transform" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 bg-zinc-50/50 p-3 rounded-2xl text-center border border-zinc-200/50">
+            <div className="grid grid-cols-3 gap-2 bg-zinc-50/50 p-3 lg:p-2.5 rounded-2xl text-center border border-zinc-200/50">
               <div>
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5">Total</p>
                 <p className="text-sm font-semibold text-zinc-600">{item.needed}</p>

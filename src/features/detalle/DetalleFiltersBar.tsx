@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react'
 import { Layers, Package, Search } from 'lucide-react'
 import { SearchInput } from '@/components/ui/SearchInput'
+import { DESKTOP_CHIP_BASE, DESKTOP_ICON_SIZE } from '@/lib/toolbarStyles'
 import type { AlbumSection, AlbumStats, DetailFilter } from '@/types/album'
 
 interface Props {
@@ -12,16 +14,16 @@ interface Props {
   detailFilter: DetailFilter
   setDetailFilter: (v: DetailFilter) => void
   stats: AlbumStats
+  action?: ReactNode
 }
 
-const BTN_BASE = 'px-4 py-3 text-sm font-bold rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-95 focus-visible:ring-4 focus-visible:ring-amber-500/20'
 const BTN_ACTIVE = 'bg-amber-500 text-white shadow-md'
 const BTN_INACTIVE = 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 shadow-sm'
 
 export function DetalleFiltersBar({
   albumData, selectedSection, setSelectedSection,
   stickerSearchTerm, setStickerSearchTerm, onJumpToStickerCode,
-  detailFilter, setDetailFilter, stats,
+  detailFilter, setDetailFilter, stats, action,
 }: Props) {
   const toggle = (filter: DetailFilter) =>
     setDetailFilter(detailFilter === filter ? null : filter)
@@ -32,12 +34,12 @@ export function DetalleFiltersBar({
   }
 
   return (
-    <div className="sticky top-[72px] sm:top-2 z-30 bg-zinc-50/80 sm:bg-white/80 backdrop-blur-xl py-3 sm:py-4 -mx-3 px-3 sm:-mx-6 sm:px-6 mb-6 sm:border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] sm:rounded-3xl transition-all">
-      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between max-w-6xl mx-auto">
-        <div className="w-full md:w-auto flex items-center gap-3">
-          <label className="font-bold text-zinc-700 hidden sm:block text-sm uppercase tracking-wider">Seccion</label>
+    <div className="w-full bg-zinc-50/80 sm:bg-white/80 backdrop-blur-xl py-3 lg:py-2.5 px-3 sm:px-4 lg:px-0 mb-4 lg:mb-5 sm:border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] sm:rounded-3xl transition-all">
+      <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-3 lg:gap-2 items-stretch lg:items-center justify-between w-full min-h-[72px]">
+        <div className="w-full lg:w-auto flex items-center gap-3 shrink-0">
+          <label className="font-semibold text-zinc-600 hidden sm:block text-[13px] whitespace-nowrap">Sección</label>
           <select
-            className="w-full md:w-64 px-4 py-3 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-bold text-zinc-900 transition-all cursor-pointer shadow-sm appearance-none"
+            className="w-full lg:w-44 xl:w-52 px-4 py-3 lg:py-0 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 transition-all cursor-pointer shadow-sm appearance-none shrink-0 h-11 lg:h-11"
             value={selectedSection}
             onChange={e => setSelectedSection(e.target.value)}
             style={{
@@ -59,32 +61,38 @@ export function DetalleFiltersBar({
           value={stickerSearchTerm}
           onChange={handleStickerSearch}
           placeholder="Buscar ARG17 o ARG017..."
-          className="w-full md:w-72"
+          className="w-full lg:w-56 xl:w-64 shrink-0"
         />
 
-        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:flex-row sm:w-auto">
+        <div className="grid grid-cols-3 gap-2 w-full lg:w-auto sm:flex sm:flex-row sm:w-auto shrink-0">
           <button
             onClick={() => toggle('unique')}
-            className={`${BTN_BASE} ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
-            <Package className="w-4 h-4" strokeWidth={2.5} />
+            <Package className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Pegadas
           </button>
           <button
             onClick={() => toggle('missing')}
-            className={`${BTN_BASE} ${detailFilter === 'missing' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'missing' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
-            <Search className="w-4 h-4" strokeWidth={2.5} />
+            <Search className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Faltantes
           </button>
           <button
             onClick={() => toggle('repeated')}
-            className={`${BTN_BASE} ${detailFilter === 'repeated' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'repeated' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
-            <Layers className="w-5 h-5" strokeWidth={2.5} />
+            <Layers className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Repetidas
           </button>
         </div>
+
+        {action && (
+          <div className="w-full lg:w-auto lg:ml-auto shrink-0">
+            {action}
+          </div>
+        )}
       </div>
     </div>
   )

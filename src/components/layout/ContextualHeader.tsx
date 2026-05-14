@@ -22,20 +22,20 @@ export function ContextualHeader({ activeTab, userName, notificationsCount, onPr
   return (
     <header className="sticky top-2 z-40 bg-white/80 backdrop-blur-xl rounded-3xl px-4 sm:px-6 py-3 sm:py-4 shadow-sm border border-white flex justify-between items-center gap-4 transition-all duration-300 animate-in fade-in slide-in-from-top-4">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="bg-amber-100 p-2 sm:p-2.5 rounded-xl text-amber-600 shadow-inner shrink-0">
+        <div className="bg-amber-100 p-2 lg:p-1.5 sm:p-2.5 rounded-xl text-amber-600 shadow-inner shrink-0">
           {meta.icon}
         </div>
-        <h1 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight truncate">{meta.label}</h1>
+        <h1 className="text-lg lg:text-[17px] sm:text-xl font-black text-zinc-900 tracking-tight truncate">{meta.label}</h1>
       </div>
       <button
-        className="flex items-center gap-3 sm:gap-4 shrink-0 hover:bg-zinc-100/50 p-2 -mr-2 rounded-2xl transition-all active:scale-95 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/20"
+        className="flex items-center gap-3 lg:gap-3 sm:gap-4 shrink-0 hover:bg-zinc-100/50 p-2 -mr-2 rounded-2xl transition-all active:scale-95 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/20"
         onClick={onProfileOpen}
       >
         <div className="flex flex-col items-end text-right hidden sm:flex">
-          <p className="text-sm font-bold text-zinc-900 group-hover:text-amber-600 transition-colors leading-tight">@{userName}</p>
+          <p className="text-sm lg:text-[13px] font-bold text-zinc-900 group-hover:text-amber-600 transition-colors leading-tight">@{userName}</p>
         </div>
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-white shadow-md flex items-center justify-center flex-shrink-0 relative">
-          <User className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+        <div className="w-10 h-10 lg:w-9 lg:h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-white shadow-md flex items-center justify-center flex-shrink-0 relative">
+          <User className="w-5 h-5 lg:w-4 lg:h-4 sm:w-6 sm:h-6 text-amber-600" />
           {notificationsCount > 0 && (
             <div className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
               {notificationsCount}

@@ -52,14 +52,14 @@ export function CompararView({
 
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white p-5 rounded-3xl border border-zinc-200/60 shadow-sm">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white p-5 lg:p-4 rounded-3xl border border-zinc-200/60 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl hidden sm:block">
               <UsersRound className="w-5 h-5" strokeWidth={2.5} />
             </div>
             <select
-              className="flex-1 md:w-64 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-bold text-zinc-900 cursor-pointer transition-all appearance-none disabled:opacity-60"
+            className="flex-1 md:w-64 px-4 py-3 lg:py-0 h-11 lg:h-11 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 cursor-pointer transition-all appearance-none disabled:opacity-60"
               value={compareFilter}
               onChange={e => onFilterChange(e.target.value)}
               disabled={isLoadingGroups}
@@ -97,7 +97,7 @@ export function CompararView({
 
         <button
           onClick={() => { setShowCreateGroup(!showCreateGroup); setIsManagingGroup(false) }}
-          className="flex items-center justify-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-600 hover:shadow-lg hover:-translate-y-0.5 text-white font-bold rounded-2xl transition-all w-full md:w-auto active:scale-[0.98] shadow-sm"
+          className="flex items-center justify-center gap-2 px-5 py-3 lg:py-0 h-11 lg:h-11 bg-amber-500 hover:bg-amber-600 hover:shadow-lg hover:-translate-y-0.5 text-white font-bold rounded-2xl transition-all w-full md:w-auto active:scale-[0.98] shadow-sm"
         >
           {showCreateGroup ? <X className="w-5 h-5" strokeWidth={2.5} /> : <Plus className="w-5 h-5" strokeWidth={2.5} />}
           {showCreateGroup ? 'Cancelar' : 'Nuevo Grupo'}

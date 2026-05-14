@@ -40,11 +40,10 @@ export function DetalleView({
         detailFilter={detailFilter}
         setDetailFilter={setDetailFilter}
         stats={stats}
+        action={<CodeEntryCard onOpen={() => setIsScanOpen(true)} />}
       />
 
-      <CodeEntryCard onOpen={() => setIsScanOpen(true)} />
-
-      <div className="space-y-8 sm:space-y-10">
+      <div className="space-y-8 sm:space-y-10 lg:mt-1">
         {selectedSection === 'all'
           ? albumData.map(section => (
               <StickerGrid
