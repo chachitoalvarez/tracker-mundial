@@ -206,29 +206,37 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           {flow === 'review' && selectedSticker && (
             <div className="p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Confirma los datos</h2>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Encontramos esta figurita</h2>
                 <p className="text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
-                  Revisá la figurita antes de guardarla.
+                  Revisá que sea la correcta antes de guardarla.
                 </p>
               </div>
 
               <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-zinc-900 truncate">
-                    {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
-                  </p>
-                  <p className="text-xs font-bold text-zinc-400 truncate">{selectedSticker.subseccion}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-zinc-900 truncate">
+                      {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
+                    </p>
+                    <p className="text-xs font-bold text-zinc-400 truncate">
+                      {selectedSticker.paisEquipo || selectedSticker.subseccion} · {selectedSticker.codigoAlias}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                    currentCount <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {getStatusLabel(currentCount)}
+                  </span>
                 </div>
 
-                <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700">
-                  <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Estado</span>
-                  {getStatusLabel(currentCount)}
+                <div className="text-sm font-bold text-zinc-900">
+                  Código cargado: <span className="text-amber-600">{selectedSticker.codigoAlias}</span>
                 </div>
 
                 <p className="text-sm font-medium text-zinc-600 leading-relaxed">
                   {currentCount <= 0
-                    ? 'Vamos a sumarla a tu álbum.'
-                    : 'Ya la tenías. Si confirmás, la vamos a sumar como repetida.'}
+                    ? 'Se va a sumar a tu álbum.'
+                    : 'Ya la tenías. Se va a sumar a tus repetidas.'}
                 </p>
               </div>
             </div>
@@ -260,7 +268,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
-                Cambiar código
+                Editar código
               </button>
               <button
                 onClick={confirm}
