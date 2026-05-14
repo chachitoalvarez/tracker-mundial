@@ -216,7 +216,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                       {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
                     </p>
                     <p className="text-xs font-bold text-zinc-400 truncate">
-                      {selectedSticker.paisEquipo || selectedSticker.subseccion}
+                      {selectedSticker.codigoAlias}
                     </p>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
@@ -227,7 +227,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 </div>
 
                 <div className="text-sm font-bold text-zinc-900">
-                  Código cargado: <span className="text-amber-600">{selectedSticker.codigoAlias}</span>
+                  Código: <span className="text-amber-600">{selectedSticker.codigoAlias}</span>
                 </div>
               </div>
             </div>
