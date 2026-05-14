@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { ArrowLeft, Check, Keyboard, X } from 'lucide-react'
 import { formatStickerDisplayId } from '@/lib/album'
-import { getStickerPrefixes, parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
+import { parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
 import type { AlbumSection, Sticker } from '@/types/album'
 
 interface Props {
@@ -37,7 +37,6 @@ function getSuccessCopy(currentCount: number) {
 }
 
 export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props) {
-  const prefixOptions = useMemo(() => getStickerPrefixes(), [])
   const [flow, setFlow] = useState<FlowState>('form')
   const [prefix, setPrefix] = useState('')
   const [number, setNumber] = useState('')
@@ -46,12 +45,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const [error, setError] = useState<string | null>(null)
   const [selectedSticker, setSelectedSticker] = useState<Sticker | null>(null)
   const [currentCount, setCurrentCount] = useState(0)
-
-  useEffect(() => {
-    if (!isOpen) return
-    const firstInput = document.getElementById('sticker-code-prefix') as HTMLInputElement | null
-    firstInput?.focus()
-  }, [isOpen, flow])
 
   if (!isOpen) return null
 
@@ -142,7 +135,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-black text-zinc-900 tracking-tight truncate">
-              {flow === 'review' ? 'Encontramos esta figurita' : flow === 'success' ? successCopy.title : 'Ingresá el código'}
+              {flow === 'review' ? 'Encontramos esta figurita' : flow === 'success' ? successCopy.title : 'Ingresá figuritas'}
             </p>
           </div>
           <button onClick={onClose} className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0">
@@ -154,7 +147,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           {flow === 'form' && (
             <div className="p-5 space-y-5">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Ingresá el código</h2>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Ingresá figuritas</h2>
                 <p className="text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
                   Lo encontrás en el dorso de la figurita, arriba a la derecha.
                 </p>
@@ -173,11 +166,10 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                         if (syncParsedInput(text)) e.preventDefault()
                       }}
                       placeholder="CUW"
-                      list="sticker-prefix-options"
                       maxLength={3}
                       autoComplete="off"
                       autoCapitalize="characters"
-                      className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-black uppercase focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
+                      className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-base font-black uppercase focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
                     />
                   </label>
                   <label className="space-y-1.5">
@@ -193,7 +185,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                       inputMode="numeric"
                       maxLength={3}
                       autoComplete="off"
-                      className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-black focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
+                      className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-base font-black focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
                     />
                   </label>
                 </div>
@@ -214,10 +206,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                   Mantener este código para la próxima carga
                 </label>
               </div>
-
-              <datalist id="sticker-prefix-options">
-                {prefixOptions.map(option => <option key={option} value={option} />)}
-              </datalist>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm font-semibold text-red-700">

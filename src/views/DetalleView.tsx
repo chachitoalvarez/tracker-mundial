@@ -42,12 +42,7 @@ export function DetalleView({
         stats={stats}
       />
 
-      <div className="rounded-3xl border border-zinc-200 bg-zinc-50/80 p-4 space-y-3">
-        <p className="text-sm font-semibold text-zinc-600">
-          En la versión web, cargá tus figuritas ingresando el código del dorso.
-        </p>
-        <CodeEntryCard onOpen={() => setIsScanOpen(true)} />
-      </div>
+      <CodeEntryCard onOpen={() => setIsScanOpen(true)} />
 
       <div className="space-y-8 sm:space-y-10">
         {selectedSection === 'all'
