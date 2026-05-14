@@ -2,14 +2,13 @@ import { useMemo, useRef, useState } from 'react'
 import { AlertCircle, Camera, Check, ImagePlus, Minus, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import { albumStickers } from '@/data/albumData'
 import { findStickerByCode, formatStickerDisplayId, searchStickers } from '@/lib/album'
-import { detectStickersFromPhoto, type DetectedSticker } from '@/services/stickerScan.service'
+import { detectStickerFromPhoto, type DetectedSticker, type ScanDebugInfo } from '@/services/stickerScan.service'
 import type { Sticker } from '@/types/album'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   onConfirm: (items: Array<{ sticker: Sticker; quantity: number }>) => void
-  onManualLoad: () => void
 }
 
 type FlowState =
@@ -17,8 +16,8 @@ type FlowState =
   | { step: 'crop'; file: File; previewUrl: string }
   | { step: 'detecting' }
   | { step: 'review'; detections: DetectedSticker[] }
-  | { step: 'too_many' }
-  | { step: 'empty' }
+  | { step: 'unreadable' }
+  | { step: 'manual' }
   | { step: 'success' }
 
 interface CropBox {
@@ -45,12 +44,14 @@ function normalizeDetections(detections: DetectedSticker[]): DetectedSticker[] {
   return Array.from(grouped.values())
 }
 
-export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }: Props) {
+export function ScanStickersDrawer({ isOpen, onClose, onConfirm }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const cropNextRef = useRef(false)
   const [flow, setFlow] = useState<FlowState>({ step: 'intro' })
   const [searchById, setSearchById] = useState<Record<string, string>>({})
   const [cropBox, setCropBox] = useState<CropBox>({ x: 15, y: 35, width: 70, height: 30 })
+  const [manualCode, setManualCode] = useState('')
+  const [scanDebug, setScanDebug] = useState<ScanDebugInfo | null>(null)
 
   const allStickerOptions = useMemo(() => albumStickers, [])
 
@@ -65,19 +66,17 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
     if (!file) return
     setFlow({ step: 'detecting' })
     try {
-      const detections = await detectStickersFromPhoto(file)
+      const result = await detectStickerFromPhoto(file)
+      setScanDebug(result.debug)
 
-      if (detections.length > 10) {
-        setFlow({ step: 'too_many' })
+      if (!result.detection) {
+        setFlow({ step: 'unreadable' })
         return
       }
-      if (detections.length === 0) {
-        setFlow({ step: 'empty' })
-        return
-      }
-      setFlow({ step: 'review', detections: normalizeDetections(detections) })
+
+      setFlow({ step: 'review', detections: normalizeDetections([result.detection]) })
     } catch {
-      setFlow({ step: 'empty' })
+      setFlow({ step: 'unreadable' })
     }
   }
 
@@ -124,6 +123,31 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
     await processFile(cropped)
   }
 
+  const parseManualCode = (input: string): string | null => {
+    const cleaned = input.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    const match = cleaned.match(/^([A-Z]{3})(\d{1,3})$/)
+    if (!match) return null
+    return `${match[1]}${match[2].padStart(3, '0')}`
+  }
+
+  const handleManualConfirm = () => {
+    const normalized = parseManualCode(manualCode)
+    if (!normalized) return
+    const sticker = findStickerByCode(normalized)
+    setFlow({
+      step: 'review',
+      detections: normalizeDetections([{
+        id: normalized,
+        code: normalized,
+        quantity: 1,
+        status: sticker ? 'needs_review' : 'unreadable',
+        sticker: sticker ?? undefined,
+        rawText: manualCode,
+        confidence: 100,
+      }]),
+    })
+  }
+
   const updateDetection = (id: string, patch: Partial<DetectedSticker>) => {
     if (flow.step !== 'review') return
     setFlow({
@@ -139,10 +163,6 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
 
   const confirm = () => {
     if (flow.step !== 'review') return
-    if (normalizeDetections(flow.detections).length > 10) {
-      setFlow({ step: 'too_many' })
-      return
-    }
     const readyDetections = normalizeDetections(flow.detections).filter(item => item.status === 'detected' && item.sticker)
     if (readyDetections.length !== flow.detections.length) return
     onConfirm(readyDetections.map(({ sticker, quantity }) => ({ sticker: sticker!, quantity })))
@@ -151,6 +171,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
 
   const retry = () => {
     setSearchById({})
+    setManualCode('')
     setFlow({ step: 'intro' })
     window.setTimeout(() => pickPhoto(false), 0)
   }
@@ -165,6 +186,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
 
   const hasPendingReview = flow.step === 'review' && flow.detections.some(item => item.status === 'needs_review' || !item.sticker)
   const hasLowConfidenceResult = flow.step === 'review' && flow.detections.some(item => item.status === 'needs_review' && item.sticker)
+  const debugVisible = import.meta.env.DEV && !!scanDebug
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-zinc-900/60 backdrop-blur-sm animate-in fade-in">
@@ -274,19 +296,32 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
             </div>
           )}
 
-          {flow.step === 'too_many' && (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <AlertCircle className="w-10 h-10 text-amber-500 mb-3" strokeWidth={2} />
-              <h2 className="text-xl font-black text-zinc-900">Hay demasiadas figuritas en la foto</h2>
-              <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">Para leerlas mejor, escaneá hasta 10 por vez. Podés hacer varias cargas seguidas.</p>
-            </div>
-          )}
-
-          {flow.step === 'empty' && (
+          {flow.step === 'unreadable' && (
             <div className="h-full flex flex-col items-center justify-center text-center p-8">
               <AlertCircle className="w-10 h-10 text-zinc-300 mb-3" strokeWidth={2} />
               <h2 className="text-xl font-black text-zinc-900">No pudimos leerlo bien</h2>
               <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">Podés intentarlo de nuevo o ingresar el código manualmente.</p>
+            </div>
+          )}
+
+          {flow.step === 'manual' && (
+            <div className="p-5 space-y-4">
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Ingresá el código</h2>
+                <p className="text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
+                  Escribí el código tal como aparece en la cápsula. Lo normalizamos antes de validar.
+                </p>
+              </div>
+
+              <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4">
+                <input
+                  value={manualCode}
+                  onChange={e => setManualCode(e.target.value)}
+                  placeholder="CUW 8"
+                  className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+                <p className="text-xs font-medium text-zinc-500 mt-2">Ejemplo: `CUW 8` → `CUW008`</p>
+              </div>
             </div>
           )}
 
@@ -383,6 +418,11 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                         Confirmar código
                       </button>
                     )}
+                    {item.status === 'unreadable' && (
+                      <div className="bg-zinc-100 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-500">
+                        No pudimos validar este código.
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -393,6 +433,32 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
                   <p className="text-xs font-bold text-amber-800 leading-relaxed">
                     Hay códigos que necesitan revisión. Corregilos o elimínalos antes de guardar.
                   </p>
+                </div>
+              )}
+
+              {debugVisible && scanDebug && (
+                <div className="space-y-3 border border-dashed border-zinc-300 rounded-2xl p-3 bg-zinc-50">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-wider text-zinc-500">Debug OCR</p>
+                    <a className="text-xs font-bold text-amber-600" href={scanDebug.originalUrl} download="ocr-original.png">Descargar original</a>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[['Original', scanDebug.originalUrl], ['Región', scanDebug.approxUrl], ['Cápsula', scanDebug.capsuleUrl], ['OCR', scanDebug.preprocessedUrl]].map(([label, url]) => (
+                      <div key={label} className="bg-white border border-zinc-200 rounded-xl p-2 space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</p>
+                        {url ? <img src={url} alt={label} className="w-full h-28 object-contain bg-zinc-50 rounded-lg" /> : <div className="h-28 rounded-lg bg-zinc-100" />}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[11px] font-medium text-zinc-600 space-y-1">
+                    <p><strong>Coordenadas:</strong> x={scanDebug.approximateRegion.x}, y={scanDebug.approximateRegion.y}, w={scanDebug.approximateRegion.width}, h={scanDebug.approximateRegion.height}</p>
+                    <p><strong>Raw:</strong> {scanDebug.rawText || 'vacío'}</p>
+                    <p><strong>Limpio:</strong> {scanDebug.cleanedText || 'vacío'}</p>
+                    <p><strong>Regex:</strong> {scanDebug.regexMatch || 'sin match'}</p>
+                    <p><strong>Normalizado:</strong> {scanDebug.normalizedCode || 'sin código'}</p>
+                    <p><strong>Catálogo:</strong> {scanDebug.existsInCatalog ? 'true' : 'false'}</p>
+                    <p><strong>Decisión:</strong> {scanDebug.decision}</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -432,18 +498,23 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm, onManualLoad }:
               </button>
             </div>
           )}
-          {flow.step === 'too_many' && (
-            <button onClick={retry} className="w-full bg-zinc-900 text-white font-bold py-3 px-4 rounded-2xl hover:bg-zinc-800 transition-all">
-              Sacar otra foto
-            </button>
-          )}
-          {flow.step === 'empty' && (
+          {flow.step === 'unreadable' && (
             <div className="flex gap-2">
               <button onClick={retry} className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all">
                 Escanear otra vez
               </button>
-              <button onClick={onManualLoad} className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all">
+              <button onClick={() => setFlow({ step: 'manual' })} className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all">
                 Ingresar código
+              </button>
+            </div>
+          )}
+          {flow.step === 'manual' && (
+            <div className="flex gap-2">
+              <button onClick={() => { setManualCode(''); setFlow({ step: 'unreadable' }) }} className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all">
+                Volver
+              </button>
+              <button onClick={handleManualConfirm} className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all">
+                Confirmar
               </button>
             </div>
           )}

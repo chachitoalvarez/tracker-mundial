@@ -71,7 +71,6 @@ export function DetalleView({
           isOpen
           onClose={() => setIsScanOpen(false)}
           onConfirm={onAddScannedStickers}
-          onManualLoad={() => setIsScanOpen(false)}
         />
       )}
     </div>
