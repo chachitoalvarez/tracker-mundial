@@ -42,6 +42,24 @@ function buildPrefixIndex(): Map<string, PrefixInfo> {
   return index
 }
 
+function buildPrefixIndexFromCatalog(catalog: Sticker[]): Map<string, PrefixInfo> {
+  const index = new Map<string, PrefixInfo>()
+
+  for (const sticker of catalog) {
+    const match = sticker.codigoFigura.match(/^([A-Z]{3})(\d{3})$/)
+    if (!match) continue
+
+    const prefix = match[1]
+    const number = Number(match[2])
+    const current = index.get(prefix) ?? { stickerCount: 0, numbers: new Set<number>() }
+    current.stickerCount += 1
+    current.numbers.add(number)
+    index.set(prefix, current)
+  }
+
+  return index
+}
+
 export function getStickerPrefixes(): string[] {
   return Array.from(prefixIndex.keys()).sort()
 }
@@ -61,15 +79,26 @@ export function parseStickerCode(input: string): ParsedStickerCode | null {
   }
 }
 
-export function normalizeStickerCode(input: string): string | null {
-  return parseStickerCode(input)?.normalizedCode ?? null
+export function getDisplayStickerCode(prefix: string, number: string): string {
+  const cleanedPrefix = prefix.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3)
+  const cleanedNumber = number.trim().replace(/\D/g, '').slice(0, 3)
+  if (!cleanedPrefix || !cleanedNumber) return ''
+  return `${cleanedPrefix}${cleanedNumber}`
 }
 
-export function validateStickerCode(input: string | ParsedStickerCode): StickerCodeValidation {
+export function normalizeStickerCode(prefixOrInput: string, number?: string): string | null {
+  const parsed = number === undefined
+    ? parseStickerCode(prefixOrInput)
+    : parseStickerCode(`${prefixOrInput}${number}`)
+  return parsed?.normalizedCode ?? null
+}
+
+export function validateStickerCode(input: string | ParsedStickerCode, catalog: Sticker[] = albumStickers): StickerCodeValidation {
   const parsed = typeof input === 'string' ? parseStickerCode(input) : input
   if (!parsed) return { status: 'not_found' }
 
-  const prefixInfo = prefixIndex.get(parsed.prefix)
+  const prefixMap = catalog === albumStickers ? prefixIndex : buildPrefixIndexFromCatalog(catalog)
+  const prefixInfo = prefixMap.get(parsed.prefix)
   if (!prefixInfo) {
     return {
       status: 'prefix_invalid',
@@ -89,7 +118,7 @@ export function validateStickerCode(input: string | ParsedStickerCode): StickerC
     }
   }
 
-  const sticker = stickersByCode.get(parsed.normalizedCode)
+  const sticker = catalog.find(item => item.codigoFigura === parsed.normalizedCode) ?? stickersByCode.get(parsed.normalizedCode) ?? null
   if (!sticker) {
     return {
       status: 'not_found',
@@ -107,4 +136,3 @@ export function validateStickerCode(input: string | ParsedStickerCode): StickerC
     sticker,
   }
 }
-

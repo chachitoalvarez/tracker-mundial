@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { ArrowLeft, Check, Keyboard, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Plus, SquareStack, X } from 'lucide-react'
 import { formatStickerDisplayId } from '@/lib/album'
-import { parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
+import { getDisplayStickerCode, normalizeStickerCode, parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
 import type { AlbumSection, Sticker } from '@/types/album'
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
   onConfirm: (items: Array<{ sticker: Sticker; quantity: number }>) => void
 }
 
-type FlowState = 'form' | 'review' | 'success'
+type FlowState = 'form' | 'review'
 
 function getCurrentCount(albumData: AlbumSection[], sticker: Sticker): number {
   const section = albumData.find(item => item.section === sticker.subseccion)
@@ -24,33 +24,32 @@ function getStatusLabel(currentCount: number) {
   return 'Repetida'
 }
 
-function getSuccessCopy(currentCount: number) {
-  return currentCount <= 0
-    ? {
-        title: 'Figurita guardada',
-        description: 'La sumamos a tu álbum.',
-      }
-    : {
-        title: 'Repetida guardada',
-        description: 'La sumamos a tus repetidas para futuros canjes.',
-      }
-}
-
 export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props) {
   const [flow, setFlow] = useState<FlowState>('form')
   const [prefix, setPrefix] = useState('')
   const [number, setNumber] = useState('')
-  const [keepPrefix, setKeepPrefix] = useState(true)
   const [lastPrefix, setLastPrefix] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [selectedSticker, setSelectedSticker] = useState<Sticker | null>(null)
   const [currentCount, setCurrentCount] = useState(0)
+  const prefixInputRef = useRef<HTMLInputElement>(null)
+  const numberInputRef = useRef<HTMLInputElement>(null)
+  const prevPrefixLengthRef = useRef(0)
+
+  useEffect(() => {
+    if (prefix.length === 3 && prevPrefixLengthRef.current < 3) {
+      requestAnimationFrame(() => numberInputRef.current?.focus())
+    }
+    prevPrefixLengthRef.current = prefix.length
+  }, [prefix])
 
   if (!isOpen) return null
 
-  const normalizedPreview = prefix && number ? `${prefix}${number.padStart(3, '0')}` : ''
-  const validation = prefix && number ? validateStickerCode(`${prefix}${number}`) : null
-  const canSearch = !!prefix && !!number
+  const displayPreview = getDisplayStickerCode(prefix, number)
+  const normalizedPreview = prefix && number ? normalizeStickerCode(prefix, number) : null
+  const canSearch = prefix.length === 3 && number.length > 0
+  const validation = canSearch ? validateStickerCode(`${prefix}${number}`) : null
+
   const syncParsedInput = (input: string) => {
     const parsed = parseStickerCode(input)
     if (!parsed) return false
@@ -74,6 +73,25 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
     setError(null)
   }
 
+  const resetForm = (preservePrefix = true) => {
+    setFlow('form')
+    setSelectedSticker(null)
+    setCurrentCount(0)
+    setError(null)
+
+    const nextPrefix = preservePrefix && lastPrefix ? lastPrefix : ''
+    setPrefix(nextPrefix)
+    setNumber('')
+
+    requestAnimationFrame(() => {
+      if (nextPrefix) {
+        numberInputRef.current?.focus()
+      } else {
+        prefixInputRef.current?.focus()
+      }
+    })
+  }
+
   const searchSticker = () => {
     if (!canSearch) {
       setError('Completá el código y el número.')
@@ -91,7 +109,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
     }
 
     if (validation?.status !== 'valid' || !validation.sticker) {
-      setError('No encontramos esta figurita. Revisá que el código esté bien escrito. Ejemplo: CUW 8.')
+      setError('No encontramos esta figurita. Revisá que el código esté bien escrito. Ejemplo: ARG10.')
       return
     }
 
@@ -105,37 +123,21 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const confirm = () => {
     if (!selectedSticker) return
     onConfirm([{ sticker: selectedSticker, quantity: 1 }])
-    setFlow('success')
+    resetForm(true)
   }
-
-  const resetForm = (preservePrefix = true) => {
-    setFlow('form')
-    setSelectedSticker(null)
-    setCurrentCount(0)
-    setError(null)
-    if (preservePrefix && keepPrefix && lastPrefix) {
-      setPrefix(lastPrefix)
-      setNumber('')
-      return
-    }
-    setPrefix('')
-    setNumber('')
-    setLastPrefix('')
-  }
-
-  const successCopy = selectedSticker ? getSuccessCopy(currentCount) : getSuccessCopy(0)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-zinc-900/60 backdrop-blur-sm animate-in fade-in">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="w-full md:w-[460px] bg-zinc-50 max-h-[92dvh] md:max-h-none md:h-[100dvh] shadow-2xl flex flex-col relative z-10 animate-in slide-in-from-bottom-8 md:slide-in-from-right-8 duration-300 rounded-t-[2rem] md:rounded-t-none md:rounded-l-[2rem] overflow-hidden">
         <div className="flex-shrink-0 px-5 py-4 bg-white border-b border-zinc-200/60 flex items-center gap-3 pt-[calc(1rem+env(safe-area-inset-top))]">
-          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 shadow-inner flex items-center justify-center flex-shrink-0">
-            <Keyboard className="w-5 h-5" strokeWidth={2.5} />
+          <div className="relative w-10 h-10 rounded-full bg-amber-100 text-amber-600 shadow-inner flex items-center justify-center flex-shrink-0">
+            <SquareStack className="w-5 h-5" strokeWidth={2.5} />
+            <Plus className="w-3.5 h-3.5 absolute -bottom-0.5 -right-0.5 bg-amber-100 rounded-full p-0.5" strokeWidth={3} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-black text-zinc-900 tracking-tight truncate">
-              {flow === 'review' ? 'Encontramos esta figurita' : flow === 'success' ? successCopy.title : 'Ingresá figuritas'}
+              {flow === 'review' ? 'Encontramos esta figurita' : 'Cargar figurita'}
             </p>
           </div>
           <button onClick={onClose} className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0">
@@ -147,10 +149,11 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
           {flow === 'form' && (
             <div className="p-5 space-y-5">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Ingresá figuritas</h2>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Ingresá el código</h2>
                 <p className="text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
-                  Lo encontrás en el dorso de la figurita, arriba a la derecha.
+                  Está en el dorso, arriba a la derecha.
                 </p>
+                <p className="text-xs font-semibold text-zinc-500 mt-2">Ejemplo: ARG10</p>
               </div>
 
               <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-4">
@@ -158,14 +161,14 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                   <label className="space-y-1.5">
                     <span className="text-xs font-black uppercase tracking-wider text-zinc-500">Código</span>
                     <input
-                      id="sticker-code-prefix"
+                      ref={prefixInputRef}
                       value={prefix}
                       onChange={e => handlePrefixChange(e.target.value)}
                       onPaste={e => {
                         const text = e.clipboardData.getData('text')
                         if (syncParsedInput(text)) e.preventDefault()
                       }}
-                      placeholder="CUW"
+                      placeholder="ARG"
                       maxLength={3}
                       autoComplete="off"
                       autoCapitalize="characters"
@@ -175,14 +178,17 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                   <label className="space-y-1.5">
                     <span className="text-xs font-black uppercase tracking-wider text-zinc-500">Número</span>
                     <input
+                      ref={numberInputRef}
                       value={number}
                       onChange={e => handleNumberChange(e.target.value)}
                       onPaste={e => {
                         const text = e.clipboardData.getData('text')
                         if (syncParsedInput(text)) e.preventDefault()
                       }}
-                      placeholder="8"
+                      placeholder="10"
+                      type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       maxLength={3}
                       autoComplete="off"
                       className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-base font-black focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500"
@@ -191,20 +197,12 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 </div>
 
                 <p className="text-sm font-bold text-zinc-900">
-                  Código a cargar: <span className="text-amber-600">{normalizedPreview || '—'}</span>
+                  Código a cargar: <span className="text-amber-600">{displayPreview || '—'}</span>
                 </p>
 
-                <p className="text-xs font-medium text-zinc-500">Ejemplo: CUW 8</p>
-
-                <label className="flex items-center gap-3 text-sm font-semibold text-zinc-700">
-                  <input
-                    type="checkbox"
-                    checked={keepPrefix}
-                    onChange={e => setKeepPrefix(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-500/20"
-                  />
-                  Mantener este código para la próxima carga
-                </label>
+                <p className="text-xs font-medium text-zinc-500">
+                  La app lo normaliza como <span className="font-bold text-zinc-700">{normalizedPreview || '—'}</span>
+                </p>
               </div>
 
               {error && (
@@ -240,7 +238,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 <div className="grid grid-cols-2 gap-2 text-sm font-semibold text-zinc-700">
                   <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2">
                     <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Código</span>
-                    {selectedSticker.codigoFigura}
+                    {formatStickerDisplayId(selectedSticker.codigoFigura)}
                   </div>
                   <div className="bg-white border border-zinc-200 rounded-xl px-3 py-2">
                     <span className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Estado</span>
@@ -254,16 +252,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                     : 'Ya la tenías. Si confirmás, la vamos a sumar como repetida.'}
                 </p>
               </div>
-            </div>
-          )}
-
-          {flow === 'success' && selectedSticker && (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-                <Check className="w-8 h-8" strokeWidth={3} />
-              </div>
-              <h2 className="text-xl font-black text-zinc-900">{successCopy.title}</h2>
-              <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">{successCopy.description}</p>
             </div>
           )}
         </div>
@@ -288,6 +276,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                   setSelectedSticker(null)
                   setCurrentCount(0)
                   setError(null)
+                  requestAnimationFrame(() => numberInputRef.current?.focus())
                 }}
                 className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all flex items-center justify-center gap-2"
               >
@@ -299,22 +288,6 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
               >
                 Guardar figurita
-              </button>
-            </div>
-          )}
-          {flow === 'success' && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => resetForm(true)}
-                className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all"
-              >
-                Cargar otra
-              </button>
-              <button
-                onClick={onClose}
-                className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
-              >
-                Listo
               </button>
             </div>
           )}

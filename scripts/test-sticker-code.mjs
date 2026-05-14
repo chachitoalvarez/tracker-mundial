@@ -45,21 +45,26 @@ function validateStickerCode(input) {
 }
 
 const cases = [
-  ['CUW 8', 'CUW008'],
-  ['cuw8', 'CUW008'],
-  ['CUW-8', 'CUW008'],
-  ['CUW008', 'CUW008'],
-  ['ARG 12', 'ARG012'],
+  { input: 'CUW 8', display: 'CUW8', normalized: 'CUW008' },
+  { input: 'cuw8', display: 'CUW8', normalized: 'CUW008' },
+  { input: 'CUW-8', display: 'CUW8', normalized: 'CUW008' },
+  { input: 'CUW008', display: 'CUW008', normalized: 'CUW008' },
+  { input: 'ARG 12', display: 'ARG12', normalized: 'ARG012' },
+  { input: 'ARG-10', display: 'ARG10', normalized: 'ARG010' },
 ]
 
-for (const [input, expected] of cases) {
+for (const { input, display, normalized } of cases) {
   const parsed = parseStickerCode(input)
-  if (!parsed || parsed.normalizedCode !== expected) {
-    throw new Error(`normalize failed for ${input}: ${parsed?.normalizedCode ?? 'null'} !== ${expected}`)
+  if (!parsed || parsed.normalizedCode !== normalized) {
+    throw new Error(`normalize failed for ${input}: ${parsed?.normalizedCode ?? 'null'} !== ${normalized}`)
   }
   const validation = validateStickerCode(input)
-  if (validation.status !== 'valid' || validation.normalizedCode !== expected) {
+  if (validation.status !== 'valid' || validation.normalizedCode !== normalized) {
     throw new Error(`validation failed for ${input}: ${validation.status}`)
+  }
+  const shown = `${parsed.prefix}${parsed.number}`
+  if (shown !== display) {
+    throw new Error(`display failed for ${input}: ${shown} !== ${display}`)
   }
 }
 
@@ -69,4 +74,3 @@ if (invalid.status === 'valid') {
 }
 
 console.log('OK: sticker code parsing and validation')
-
