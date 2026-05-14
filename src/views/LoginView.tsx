@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { Trophy, Lock, Mail, AtSign, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { APP_NAME } from '@/lib/constants'
 
 export function LoginView() {
   const {
@@ -34,7 +35,7 @@ export function LoginView() {
           <div className="w-16 h-16 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600 rounded-2xl flex items-center justify-center mb-5 rotate-3 shadow-inner border border-amber-200/50">
             <Trophy className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">Tracker Mundial</h1>
+          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">{APP_NAME}</h1>
           <p className="text-zinc-500 mt-2 font-medium">Gestiona tu colección y encuentra con quién intercambiar.</p>
         </div>
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase'
+import { LEGACY_PROJECT_SLUG, PROJECT_SLUG } from '@/lib/constants'
 import type { TradeMatch, TradeCandidate, TradeUser } from '@/types/trade'
 
 interface TradeMatchRow {
@@ -68,7 +69,11 @@ export async function getTradeCandidates(limit = 20): Promise<{ data: TradeCandi
 }
 
 function localSentKey(userId: string) {
-  return `tracker-mundial-trade-likes-sent:${userId}`
+  return `${PROJECT_SLUG}-trade-likes-sent:${userId}`
+}
+
+function legacyLocalSentKey(userId: string) {
+  return `${LEGACY_PROJECT_SLUG}-trade-likes-sent:${userId}`
 }
 
 async function getCurrentUserId() {
@@ -78,7 +83,12 @@ async function getCurrentUserId() {
 
 function readLocalSent(userId: string): TradeUser[] {
   try {
-    return JSON.parse(localStorage.getItem(localSentKey(userId)) ?? '[]') as TradeUser[]
+    const stored = localStorage.getItem(localSentKey(userId)) ?? localStorage.getItem(legacyLocalSentKey(userId))
+    const parsed = JSON.parse(stored ?? '[]') as TradeUser[]
+    if (stored && !localStorage.getItem(localSentKey(userId))) {
+      localStorage.setItem(localSentKey(userId), stored)
+    }
+    return parsed
   } catch {
     return []
   }

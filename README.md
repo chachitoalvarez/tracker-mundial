@@ -1,14 +1,14 @@
-# Tracker Mundial 2026
+# Late Nola
 
-Gestor de álbum de figuritas del Mundial 2026. Controlá tu colección, comparate con amigos e intercambiá repetidas.
+Organizá tu álbum, marcá las que tenés y encontrá las que te faltan.
 
 ## Stack
 
-- Vite + React 19 + TypeScript (strict)
+- Vite + React 19 + TypeScript
 - Tailwind CSS v3 + tailwindcss-animate
 - lucide-react, clsx, tailwind-merge
 - Persistencia local vía `localStorage`
-- Supabase (scaffolding preparado, sin integración activa)
+- Supabase preparado para integrarse
 
 ## Cómo correr
 
@@ -23,18 +23,18 @@ npm run preview  # sirve el build local
 
 ```
 src/
-├── types/          # Interfaces TypeScript (album, user, trade, chat, group, achievement)
-├── data/           # Mocks estáticos (albumData, mockFriends, mockTradeUsers, mockGroups)
-├── lib/            # Utilidades puras (cn, stats, icons, constants)
-├── hooks/          # Hooks de dominio (useAlbum, useTrades, useChat, useGroups, ...)
-├── contexts/       # React contexts (AuthContext, UIContext)
-├── services/       # Stubs Supabase (album, auth, trades, groups)
-├── components/     # Componentes reutilizables (ui/, layout/, drawers/, overlays/)
-├── features/       # Componentes por dominio (resumen/, detalle/, comparar/, ...)
-└── views/          # Vistas de cada tab (ResumenView, DetalleView, CompararView, ...)
+├── types/          # Interfaces TypeScript
+├── data/           # Mocks estáticos
+├── lib/            # Utilidades puras
+├── hooks/          # Hooks de dominio
+├── contexts/       # React contexts
+├── services/       # Stubs Supabase
+├── components/     # Componentes reutilizables
+├── features/       # Componentes por dominio
+└── views/          # Vistas de cada tab
 ```
 
-## Conectar Supabase (4 pasos)
+## Conectar Supabase
 
 1. Crear un proyecto en [supabase.com](https://supabase.com) y copiar la URL y la anon key.
 2. Crear `.env.local` en esta carpeta con:
@@ -43,4 +43,4 @@ src/
    VITE_SUPABASE_ANON_KEY=eyJhbGci...
    ```
 3. Instalar el cliente: `npm install @supabase/supabase-js`
-4. Descomentar y completar las implementaciones reales en `src/services/supabase.ts` y los demás archivos en `src/services/`.
+4. Completar las implementaciones reales en `src/services/supabase.ts` y el resto de `src/services/`.

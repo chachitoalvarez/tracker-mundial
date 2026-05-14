@@ -1,4 +1,5 @@
 import { Trophy, User } from 'lucide-react'
+import { APP_NAME } from '@/lib/constants'
 
 interface Props {
   userName: string
@@ -14,7 +15,7 @@ export function MainHeader({ userName, onProfileOpen }: Props) {
           <div className="p-1.5 sm:p-2 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg sm:rounded-xl shadow-sm border border-amber-200/50 rotate-3 shrink-0">
             <Trophy className="text-amber-600 h-5 w-5 sm:h-7 sm:w-7" strokeWidth={2.5} />
           </div>
-          <span className="truncate">Tracker Mundial</span>
+          <span className="truncate">{APP_NAME}</span>
         </h1>
         <p className="text-zinc-500 mt-1 text-xs sm:text-sm font-medium ml-1 truncate">Gestiona tu colección oficial</p>
       </div>

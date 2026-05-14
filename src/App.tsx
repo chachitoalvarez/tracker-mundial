@@ -8,6 +8,7 @@ import { useTrades } from '@/hooks/useTrades'
 import { ChatProvider, useChat } from '@/contexts/ChatContext'
 import { useGroups } from '@/hooks/useGroups'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
+import { LEGACY_PROJECT_SLUG, PROJECT_SLUG } from '@/lib/constants'
 
 import { LoginView } from '@/views/LoginView'
 import { ResumenView } from '@/views/ResumenView'
@@ -48,7 +49,11 @@ function AppShell() {
 
   const { achievements, unlockedCount } = useAchievements(albumData, stats, isLoadingAlbum, triggerCelebration)
   const seenAchievementsKey = useMemo(
-    () => sessionUserId ? `tracker-mundial-seen-achievements-${sessionUserId}` : '',
+    () => sessionUserId ? `${PROJECT_SLUG}-seen-achievements-${sessionUserId}` : '',
+    [sessionUserId],
+  )
+  const legacySeenAchievementsKey = useMemo(
+    () => sessionUserId ? `${LEGACY_PROJECT_SLUG}-seen-achievements-${sessionUserId}` : '',
     [sessionUserId],
   )
   const [seenAchievementsCount, setSeenAchievementsCount] = useState(0)
@@ -70,9 +75,20 @@ function AppShell() {
       setSeenAchievementsCount(0)
       return
     }
-    const storedCount = Number(window.localStorage.getItem(seenAchievementsKey) ?? '0')
+    const storedCount = Number(
+      window.localStorage.getItem(seenAchievementsKey)
+      ?? window.localStorage.getItem(legacySeenAchievementsKey)
+      ?? '0'
+    )
     setSeenAchievementsCount(Number.isFinite(storedCount) ? storedCount : 0)
-  }, [seenAchievementsKey])
+    if (seenAchievementsKey && legacySeenAchievementsKey) {
+      const legacyValue = window.localStorage.getItem(legacySeenAchievementsKey)
+      const currentValue = window.localStorage.getItem(seenAchievementsKey)
+      if (legacyValue !== null && currentValue === null) {
+        window.localStorage.setItem(seenAchievementsKey, legacyValue)
+      }
+    }
+  }, [legacySeenAchievementsKey, seenAchievementsKey])
 
   useEffect(() => {
     if (activeTab !== 'logros' || !seenAchievementsKey || isLoadingAlbum) return

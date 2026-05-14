@@ -1,7 +1,7 @@
 import { supabase } from '@/services/supabase'
 import { albumData as baseAlbumData, stickersBySubseccion, stickersByCode } from '@/data/albumData'
 import type { AlbumSection, UserStickerCount } from '@/types/album'
-import { LOCAL_STORAGE_KEY } from '@/lib/constants'
+import { LEGACY_LOCAL_STORAGE_KEY, LOCAL_STORAGE_KEY } from '@/lib/constants'
 
 type LegacyCollectedMap = Record<string, Record<string, number>>
 
@@ -73,12 +73,15 @@ export async function getAlbumState(): Promise<{ data: AlbumSection[] | null; er
   // Migrate from localStorage for first-time Supabase users
   let migratedCollected: UserStickerCount = {}
   try {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOCAL_STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
       migratedCollected = Array.isArray(parsed)
         ? toCollectedMap(parsed as AlbumSection[])
         : normalizeCollectedPayload(parsed)
+      if (!localStorage.getItem(LOCAL_STORAGE_KEY)) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, stored)
+      }
     }
   } catch { /* ignore */ }
 
