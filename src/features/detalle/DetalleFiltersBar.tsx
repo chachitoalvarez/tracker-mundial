@@ -35,10 +35,10 @@ export function DetalleFiltersBar({
 
   return (
     <div className="w-full bg-zinc-50/80 sm:bg-white/80 backdrop-blur-xl py-3 lg:py-2.5 px-3 sm:px-4 lg:px-0 mb-4 lg:mb-5 sm:border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] sm:rounded-3xl transition-all">
-      <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-3 lg:gap-2 items-stretch lg:items-center justify-between w-full min-h-[72px]">
+      <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-3 lg:gap-2 xl:gap-3 items-stretch lg:items-center justify-between w-full min-h-[72px]">
         <div className="w-full lg:w-auto flex items-center shrink-0">
           <select
-            className="w-full lg:w-[340px] xl:w-[360px] max-w-full px-4 py-3 lg:py-0 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 transition-all cursor-pointer shadow-sm appearance-none shrink-0 h-11 lg:h-11"
+            className="w-full lg:w-[280px] xl:w-[320px] max-w-full px-4 py-3 lg:py-0 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 transition-all cursor-pointer shadow-sm appearance-none shrink-0 h-11 lg:h-11"
             value={selectedSection}
             onChange={e => setSelectedSection(e.target.value)}
             style={{
@@ -48,10 +48,10 @@ export function DetalleFiltersBar({
               backgroundSize: '1.5em 1.5em',
             }}
           >
-            <option value="all">Sección · Ver todo el álbum ({stats.totalCompleted}/{stats.totalNeeded})</option>
+            <option value="all">Todo el álbum ({stats.totalCompleted}/{stats.totalNeeded})</option>
             {albumData.map(s => {
               const uniqueCount = Object.values(s.collected).filter(v => v > 0).length
-              return <option key={s.section} value={s.section}>Sección · {s.section} ({uniqueCount}/{s.needed})</option>
+              return <option key={s.section} value={s.section}>{s.section} ({uniqueCount}/{s.needed})</option>
             })}
           </select>
         </div>
@@ -59,28 +59,28 @@ export function DetalleFiltersBar({
         <SearchInput
           value={stickerSearchTerm}
           onChange={handleStickerSearch}
-          placeholder="Buscar ARG10..."
-          className="w-full lg:w-[260px] xl:w-[280px] shrink-0"
+          placeholder="Buscar ARG10"
+          className="w-full lg:w-[180px] xl:w-[220px] shrink-0"
         />
 
-        <div className="grid grid-cols-3 gap-2 w-full lg:w-auto sm:flex sm:flex-row sm:w-auto shrink-0">
+        <div className="grid grid-cols-3 gap-2 w-full lg:w-auto sm:flex sm:flex-row sm:w-auto lg:gap-1.5 xl:gap-2 shrink-0">
           <button
             onClick={() => toggle('unique')}
-            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-3 xl:text-sm ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
             <Package className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Pegadas
           </button>
           <button
             onClick={() => toggle('missing')}
-            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'missing' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-3 xl:text-sm ${detailFilter === 'missing' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
             <Search className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Faltantes
           </button>
           <button
             onClick={() => toggle('repeated')}
-            className={`${DESKTOP_CHIP_BASE} lg:px-2.5 lg:text-[13px] ${detailFilter === 'repeated' ? BTN_ACTIVE : BTN_INACTIVE}`}
+            className={`${DESKTOP_CHIP_BASE} lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-3 xl:text-sm ${detailFilter === 'repeated' ? BTN_ACTIVE : BTN_INACTIVE}`}
           >
             <Layers className={`${DESKTOP_ICON_SIZE}`} strokeWidth={2.5} />
             Repetidas
