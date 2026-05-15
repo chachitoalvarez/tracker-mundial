@@ -1,19 +1,16 @@
 /**
- * Seed script: loads panini_mundial_2026_980_limpio.json into the Supabase stickers table.
+ * Seed script: loads panini_mundial_2026_980_limpio.json into the Supabase figuritas table.
  *
  * Usage:
  *   node scripts/seed-stickers.mjs
  *
  * Requires env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
- * (service role key, NOT the anon key — anon can't write to stickers)
- *
- * Set them in .env or pass inline:
- *   SUPABASE_URL=https://xxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=xxx node scripts/seed-stickers.mjs
+ * (service role key, NOT the anon key - anon cannot write to figuritas)
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -33,9 +30,8 @@ const jsonPath = resolve(__dirname, '../src/data/panini_mundial_2026_980_limpio.
 const raw = JSON.parse(readFileSync(jsonPath, 'utf-8'))
 const figuritas = raw.figuritas
 
-console.log(`Loaded ${figuritas.length} stickers from JSON`)
+console.log(`Loaded ${figuritas.length} figuritas from JSON`)
 
-// Transform to DB rows
 const rows = figuritas.map(f => ({
   id: `wc2026:base:${f.codigo_figura}`,
   numero_orden: f.numero_orden,
@@ -51,14 +47,13 @@ const rows = figuritas.map(f => ({
   acabado: f.acabado,
 }))
 
-// Upsert in batches of 200
 const BATCH_SIZE = 200
 let inserted = 0
 
 for (let i = 0; i < rows.length; i += BATCH_SIZE) {
   const batch = rows.slice(i, i + BATCH_SIZE)
   const { error } = await supabase
-    .from('stickers')
+    .from('figuritas')
     .upsert(batch, { onConflict: 'id' })
 
   if (error) {
@@ -70,4 +65,4 @@ for (let i = 0; i < rows.length; i += BATCH_SIZE) {
   console.log(`  Upserted ${inserted} / ${rows.length}`)
 }
 
-console.log(`\n✅ Done. ${inserted} stickers seeded into Supabase.`)
+console.log(`\nDone. ${inserted} figuritas seeded into Supabase.`)

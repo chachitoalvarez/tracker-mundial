@@ -69,3 +69,30 @@ VITE_SUPABASE_ANON_KEY=eyJhbGci...
    - Agregar los orígenes autorizados de local y producción.
    - Copiar `Client ID` y `Client Secret` al provider de Google en Supabase.
 La app usa `window.location.origin` como `redirectTo`, así que cualquier dominio desde el que se pruebe el login debe estar permitido en la lista de Redirect URLs de Supabase.
+
+## RPCs requeridas
+
+La resolución de usuarios por `@username` usa `public.get_email_by_username(text)`.
+
+Si falta en Supabase, aplicar la migración:
+
+```sql
+supabase/migrations/20260515190000_add_get_email_by_username.sql
+```
+
+El ranking usa RPCs `security definer` y deben leer desde `public.users`:
+
+```sql
+supabase/migrations/20260515210000_update_leaderboard_functions_for_users.sql
+```
+
+## Tablas de referencia
+
+El catálogo maestro del álbum vive en `public.figuritas`.
+
+Para crearla en un entorno nuevo y poblarla:
+
+```text
+1. Aplicar `supabase/migrations/20260515200000_create_figuritas_table.sql`
+2. Ejecutar `node scripts/seed-stickers.mjs` con `SUPABASE_SERVICE_ROLE_KEY`
+```

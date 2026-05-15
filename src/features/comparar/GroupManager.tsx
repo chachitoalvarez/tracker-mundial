@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, User, UserPlus, Trash2, Clock, AtSign } from 'lucide-react'
+import { AtSign, Clock, Settings, Trash2, User, UserPlus } from 'lucide-react'
 import * as groupsService from '@/services/groups.service'
 import type { Group } from '@/types/group'
 
@@ -30,17 +30,14 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
     setIsInviting(true)
 
     try {
-      const isEmail = value.includes('@')
+      const normalizedUsername = value.replace(/^@/, '')
+      const isEmail = EMAIL_RE.test(value)
       let emailToInvite: string
 
       if (isEmail) {
-        if (!EMAIL_RE.test(value)) {
-          setInviteError('Email inválido')
-          return
-        }
         emailToInvite = value
       } else {
-        const resolved = await groupsService.resolveUsernameToEmail(value)
+        const resolved = await groupsService.resolveUsernameToEmail(normalizedUsername)
         if (!resolved) {
           setInviteError('No encontramos a ese usuario')
           return
@@ -62,7 +59,6 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
 
       setInvite('')
       await onRefresh()
-      // TODO: feedback visual de éxito
     } catch {
       setInviteError('No se pudo añadir al grupo')
     } finally {
@@ -78,13 +74,12 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
         </h3>
         {isOwner && (
           <button onClick={onDeleteGroup} className="text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 w-full sm:w-auto justify-center active:scale-95">
-            <Trash2 className="w-4 h-4" strokeWidth={2.5} /> Eliminar Grupo
+            <Trash2 className="w-4 h-4" strokeWidth={2.5} /> Eliminar grupo
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Members list */}
         <div>
           <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
             Miembros del grupo ({group.members.length})
@@ -137,7 +132,6 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
           </div>
         </div>
 
-        {/* Invite form */}
         {isOwner && (
           <div className="md:border-l border-zinc-100 md:pl-8 pt-6 md:pt-0 border-t md:border-t-0 mt-6 md:mt-0">
             <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -151,13 +145,13 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
                   type="text"
                   value={invite}
                   onChange={e => { setInvite(e.target.value); setInviteError(null) }}
-                  placeholder="Ej: juan@email.com o usuario123"
+                  placeholder="Ej: juan@email.com o @usuario123"
                   disabled={isInviting}
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium placeholder-zinc-400 focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-60"
                 />
               </div>
               <p className="text-[10px] text-slate-400 px-0.5">
-                Ingresá el correo exacto o nombre para invitarlo al grupo.
+                Ingresá el correo exacto o el usuario, con o sin @.
               </p>
               {inviteError && (
                 <p className="text-xs text-red-600 font-medium px-0.5">{inviteError}</p>
