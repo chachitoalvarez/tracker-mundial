@@ -4,7 +4,7 @@ import { signIn, isUsernameAvailable } from '@/services/auth.service'
 import { formatUsername } from '@/lib/username'
 
 type AuthStep = 'email' | 'loading' | 'register'
-type OAuthProvider = 'google' | 'apple'
+type OAuthProvider = 'google'
 
 function getInitialOAuthError() {
   const authParams = new URLSearchParams(

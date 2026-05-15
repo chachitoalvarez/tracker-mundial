@@ -53,7 +53,6 @@ export function LoginView() {
               loadingProvider={oauthProviderLoading}
               disabled={authStep === 'loading'}
               onGoogleClick={() => handleOAuthSignIn('google')}
-              onAppleClick={() => handleOAuthSignIn('apple')}
             />
 
             <div className="flex items-center gap-3">

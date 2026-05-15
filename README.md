@@ -47,7 +47,7 @@ src/
 
 ## Login social con Supabase Auth
 
-La app soporta acceso por email/contraseña, Google y Apple.
+La app soporta acceso por email/contraseña y Google.
 
 ### Variables locales
 
@@ -60,7 +60,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGci...
 
 ### Configuración manual
 
-1. En Supabase, habilitar los providers `Google` y `Apple`.
+1. En Supabase, habilitar el provider `Google`.
 2. En `Authentication > URL Configuration`, definir:
    - `Site URL`: `https://latenola-app.vercel.app`
    - `Redirect URLs`: `http://localhost:5173/**` y `https://latenola-app.vercel.app/**`.
@@ -68,10 +68,4 @@ VITE_SUPABASE_ANON_KEY=eyJhbGci...
    - Crear un OAuth Client de tipo Web.
    - Agregar los orígenes autorizados de local y producción.
    - Copiar `Client ID` y `Client Secret` al provider de Google en Supabase.
-4. En Apple Developer:
-   - Configurar `Sign in with Apple`.
-   - Crear el `Service ID` y la key requeridos.
-   - Configurar la callback URL de Supabase.
-   - Copiar las credenciales al provider de Apple en Supabase.
-
 La app usa `window.location.origin` como `redirectTo`, así que cualquier dominio desde el que se pruebe el login debe estar permitido en la lista de Redirect URLs de Supabase.
