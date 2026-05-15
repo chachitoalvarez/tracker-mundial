@@ -4,6 +4,16 @@ import { signIn, isUsernameAvailable } from '@/services/auth.service'
 import { formatUsername } from '@/lib/username'
 
 type AuthStep = 'email' | 'loading' | 'register'
+type OAuthProvider = 'google' | 'apple'
+
+function getInitialOAuthError() {
+  const authParams = new URLSearchParams(
+    window.location.hash ? window.location.hash.slice(1) : window.location.search
+  )
+  return authParams.get('error_description')
+    ? 'No pudimos iniciar sesión. Intentá de nuevo.'
+    : ''
+}
 
 interface AuthContextValue {
   isAuthenticated: boolean
@@ -21,10 +31,12 @@ interface AuthContextValue {
   password: string
   setPassword: (v: string) => void
   loginError: string
+  oauthProviderLoading: OAuthProvider | null
   lastSignupEmail: string | null
   setLastSignupEmail: (v: string | null) => void
   handleEmailSubmit: (e: React.FormEvent) => void
   handleRegisterSubmit: (e: React.FormEvent) => void
+  handleOAuthSignIn: (provider: OAuthProvider) => void
   handleLogout: () => void
 }
 
@@ -40,10 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoginFlow, setIsLoginFlow] = useState(true)
   const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
-  const [loginError, setLoginError] = useState('')
+  const [loginError, setLoginError] = useState(getInitialOAuthError)
+  const [oauthProviderLoading, setOauthProviderLoading] = useState<OAuthProvider | null>(null)
   const [lastSignupEmail, setLastSignupEmail] = useState<string | null>(null)
 
   useEffect(() => {
+    if (getInitialOAuthError()) {
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUserName(formatUsername(session.user.user_metadata?.username ?? session.user.email?.split('@')[0] ?? ''))
@@ -51,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSessionEmail(session.user.email ?? '')
         setIsAuthenticated(true)
       }
+      setOauthProviderLoading(null)
       setAuthInitialized(true)
     })
 
@@ -65,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSessionEmail('')
         setIsAuthenticated(false)
       }
+      setOauthProviderLoading(null)
     })
 
     return () => subscription.unsubscribe()
@@ -127,6 +146,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const handleOAuthSignIn = async (provider: OAuthProvider) => {
+    setLoginError('')
+    setOauthProviderLoading(provider)
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
+    })
+
+    if (error) {
+      setLoginError('No pudimos iniciar sesión. Intentá de nuevo.')
+      setOauthProviderLoading(null)
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setAuthEmail('')
@@ -142,8 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionUserId, sessionEmail,
       authEmail, setAuthEmail, authStep, setAuthStep,
       isLoginFlow, setIsLoginFlow, userName, setUserName, password, setPassword,
-      loginError, lastSignupEmail, setLastSignupEmail,
-      handleEmailSubmit, handleRegisterSubmit, handleLogout,
+      loginError, oauthProviderLoading, lastSignupEmail, setLastSignupEmail,
+      handleEmailSubmit, handleRegisterSubmit, handleOAuthSignIn, handleLogout,
     }}>
       {children}
     </AuthContext.Provider>

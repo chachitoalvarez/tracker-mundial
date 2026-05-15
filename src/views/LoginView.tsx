@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState } from 'react'
-import { Trophy, Lock, Mail, AtSign, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowRight, AtSign, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail, Trophy } from 'lucide-react'
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { useAuth } from '@/contexts/AuthContext'
 import { APP_NAME } from '@/lib/constants'
 
@@ -9,8 +10,8 @@ export function LoginView() {
     isLoginFlow, setIsLoginFlow,
     userName, setUserName,
     password, setPassword,
-    loginError, lastSignupEmail, setLastSignupEmail,
-    handleEmailSubmit, handleRegisterSubmit,
+    loginError, oauthProviderLoading, lastSignupEmail, setLastSignupEmail,
+    handleEmailSubmit, handleRegisterSubmit, handleOAuthSignIn,
   } = useAuth()
 
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -35,92 +36,106 @@ export function LoginView() {
           <div className="w-16 h-16 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600 rounded-2xl flex items-center justify-center mb-5 rotate-3 shadow-inner border border-amber-200/50">
             <Trophy className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">{APP_NAME}</h1>
-          <p className="text-zinc-500 mt-2 font-medium">Gestiona tu colección y encuentra con quién intercambiar.</p>
+          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">Entrá a {APP_NAME}</h1>
+          <p className="text-zinc-500 mt-2 font-medium">Guardá tu álbum, repetidas y canjes en tu cuenta.</p>
         </div>
 
-        {/* Login */}
         {isLoginFlow && (
-          <form onSubmit={handleEmailSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
             {signupSuccess && (
               <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium px-4 py-3 rounded-2xl">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={2.5} />
                 Cuenta creada. Revisá tu email para confirmar y luego iniciá sesión.
               </div>
             )}
-            <div>
-              <label className="block text-sm font-bold text-zinc-700 mb-2">Email o usuario</label>
-              <input
-                type="text"
-                required
-                placeholder="tu@email.com o tu_usuario"
-                className="w-full px-5 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
-                value={authEmail}
-                onChange={e => setAuthEmail(e.target.value)}
-                disabled={authStep === 'loading'}
-              />
+
+            <SocialLoginButtons
+              loadingProvider={oauthProviderLoading}
+              disabled={authStep === 'loading'}
+              onGoogleClick={() => handleOAuthSignIn('google')}
+              onAppleClick={() => handleOAuthSignIn('apple')}
+            />
+
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-zinc-200" />
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">o continuá con email</span>
+              <span className="h-px flex-1 bg-zinc-200" />
             </div>
-            <div>
-              <label className="block text-sm font-bold text-zinc-700 mb-2">Contraseña</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-zinc-400 group-focus-within:text-amber-500 transition-colors" />
-                </div>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 mb-2">Email o usuario</label>
                 <input
-                  ref={passwordRef}
-                  type={showPassword ? 'text' : 'password'}
+                  type="text"
                   required
-                  placeholder="Ingresa tu contraseña"
-                  className="w-full pl-11 pr-12 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  disabled={authStep === 'loading'}
+                  placeholder="tu@email.com o tu_usuario"
+                  className="w-full px-5 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  disabled={authStep === 'loading' || !!oauthProviderLoading}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" strokeWidth={2} /> : <Eye className="w-5 h-5" strokeWidth={2} />}
-                </button>
               </div>
-            </div>
-            {loginError && (
-              <p className="text-sm font-bold text-red-500 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-center">{loginError}</p>
-            )}
-            <button
-              type="submit"
-              disabled={authStep === 'loading' || !authEmail.trim() || password.length < 6}
-              className="w-full bg-zinc-900 text-white font-bold py-3.5 px-4 rounded-2xl hover:bg-zinc-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-zinc-300 disabled:shadow-none disabled:transform-none"
-            >
-              {authStep === 'loading' ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Verificando...</>
-              ) : (
-                <>Iniciar Sesión <ArrowRight className="w-4 h-4" /></>
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 mb-2">Contraseña</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-zinc-400 group-focus-within:text-amber-500 transition-colors" />
+                  </div>
+                  <input
+                    ref={passwordRef}
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Ingresá tu contraseña"
+                    className="w-full pl-11 pr-12 py-3.5 bg-zinc-100/50 border border-zinc-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white outline-none transition-all font-medium text-zinc-900 placeholder:text-zinc-400"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    disabled={authStep === 'loading' || !!oauthProviderLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" strokeWidth={2} /> : <Eye className="w-5 h-5" strokeWidth={2} />}
+                  </button>
+                </div>
+              </div>
+              {loginError && (
+                <p className="text-sm font-bold text-red-500 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-center">{loginError}</p>
               )}
-            </button>
-            <div className="pt-3 text-center">
-              <p className="text-sm font-medium text-zinc-500">
-                ¿No tienes una cuenta?{' '}
-                <button
-                  type="button"
-                  onClick={() => { setIsLoginFlow(false); setAuthStep('register'); setAuthEmail(''); setPassword(''); setSignupSuccess(false); setShowPassword(false) }}
-                  className="text-amber-600 font-bold hover:text-amber-700 transition-colors"
-                >
-                  Regístrate
-                </button>
-              </p>
-            </div>
-          </form>
+              <button
+                type="submit"
+                disabled={authStep === 'loading' || !!oauthProviderLoading || !authEmail.trim() || password.length < 6}
+                className="w-full bg-zinc-900 text-white font-bold py-3.5 px-4 rounded-2xl hover:bg-zinc-800 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:bg-zinc-300 disabled:shadow-none disabled:transform-none"
+              >
+                {authStep === 'loading' ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Verificando...</>
+                ) : (
+                  <>Iniciar sesión <ArrowRight className="w-4 h-4" /></>
+                )}
+              </button>
+              <div className="pt-3 text-center">
+                <p className="text-sm font-medium text-zinc-500">
+                  ¿No tenés una cuenta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setIsLoginFlow(false); setAuthStep('register'); setAuthEmail(''); setPassword(''); setSignupSuccess(false); setShowPassword(false) }}
+                    className="text-amber-600 font-bold hover:text-amber-700 transition-colors"
+                  >
+                    Registrate
+                  </button>
+                </p>
+              </div>
+            </form>
+          </div>
         )}
 
-        {/* Registro */}
         {!isLoginFlow && (
           <form onSubmit={handleRegisterSubmit} className="space-y-5 animate-in fade-in slide-in-from-right-4">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Crear Cuenta</h2>
-              <p className="text-sm text-zinc-500 mt-1 font-medium">Únete a la comunidad para intercambiar</p>
+              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Crear cuenta</h2>
+              <p className="text-sm text-zinc-500 mt-1 font-medium">Unite a la comunidad para intercambiar.</p>
             </div>
             <div>
               <label className="block text-sm font-bold text-zinc-700 mb-2">Email</label>
@@ -140,7 +155,7 @@ export function LoginView() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-zinc-700 mb-2">Elige tu nombre de usuario</label>
+              <label className="block text-sm font-bold text-zinc-700 mb-2">Elegí tu nombre de usuario</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <AtSign className="h-5 w-5 text-zinc-400 group-focus-within:text-amber-500 transition-colors" />
@@ -158,7 +173,7 @@ export function LoginView() {
               <p className="text-[11px] text-zinc-400 mt-2 ml-1">Este será tu identificador público. No puede contener espacios.</p>
             </div>
             <div>
-              <label className="block text-sm font-bold text-zinc-700 mb-2">Crea una contraseña</label>
+              <label className="block text-sm font-bold text-zinc-700 mb-2">Creá una contraseña</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-zinc-400 group-focus-within:text-amber-500 transition-colors" />
@@ -192,17 +207,17 @@ export function LoginView() {
             >
               {authStep === 'loading' ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Creando cuenta...</>
-              ) : 'Crear Cuenta'}
+              ) : 'Crear cuenta'}
             </button>
             <div className="pt-3 text-center">
               <p className="text-sm font-medium text-zinc-500">
-                ¿Ya tienes cuenta?{' '}
+                ¿Ya tenés cuenta?{' '}
                 <button
                   type="button"
                   onClick={() => { setAuthStep('email'); setIsLoginFlow(true); setPassword(''); setShowPassword(false) }}
                   className="text-amber-600 font-bold hover:text-amber-700 transition-colors"
                 >
-                  Inicia sesión
+                  Iniciá sesión
                 </button>
               </p>
             </div>
