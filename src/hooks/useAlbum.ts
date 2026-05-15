@@ -69,7 +69,10 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     })
   }
 
-  const addScannedStickers = (items: Array<{ sticker: Sticker; quantity: number }>) => {
+  const addScannedStickers = (
+    items: Array<{ sticker: Sticker; quantity: number }>,
+    options: { celebrate?: boolean } = {},
+  ) => {
     const validItems = items.filter(item => item.quantity > 0)
     if (!validItems.length) return
 
@@ -96,7 +99,7 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
         return { ...section, collected }
       })
 
-      if (newlyCompleted > 0) {
+      if (newlyCompleted > 0 && options.celebrate !== false) {
         triggerCelebration('sticker', `Figuritas guardadas!\n${newlyCompleted} nuevas en tu álbum`, 'star')
       }
 

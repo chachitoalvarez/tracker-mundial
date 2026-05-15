@@ -16,7 +16,10 @@ interface Props {
   currentSectionData: AlbumSection | null
   stats: AlbumStats
   onUpdateCount: (section: string, code: string, delta: number) => void
-  onAddScannedStickers: (items: Array<{ sticker: Sticker; quantity: number }>) => void
+  onAddScannedStickers: (
+    items: Array<{ sticker: Sticker; quantity: number }>,
+    options?: { celebrate?: boolean },
+  ) => void
   onJumpToStickerCode: (query: string) => boolean
 }
 
@@ -70,7 +73,7 @@ export function DetalleView({
           isOpen
           albumData={albumData}
           onClose={() => setIsScanOpen(false)}
-          onConfirm={onAddScannedStickers}
+          onConfirm={items => onAddScannedStickers(items, { celebrate: false })}
         />
       )}
     </div>

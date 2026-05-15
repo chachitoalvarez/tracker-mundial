@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Plus, SquareStack, X } from 'lucide-react'
+import { ArrowLeft, Check, Plus, SquareStack, X } from 'lucide-react'
 import { parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
 import { formatStickerDisplayId } from '@/lib/album'
 import type { AlbumSection, Sticker } from '@/types/album'
@@ -11,7 +11,7 @@ interface Props {
   onConfirm: (items: Array<{ sticker: Sticker; quantity: number }>) => void
 }
 
-type FlowState = 'form' | 'review'
+type FlowState = 'form' | 'review' | 'success'
 
 function getCurrentCount(albumData: AlbumSection[], sticker: Sticker): number {
   const section = albumData.find(item => item.section === sticker.subseccion)
@@ -31,6 +31,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const [error, setError] = useState<string | null>(null)
   const [selectedSticker, setSelectedSticker] = useState<Sticker | null>(null)
   const [currentCount, setCurrentCount] = useState(0)
+  const [savedWasRepeated, setSavedWasRepeated] = useState(false)
   const prefixInputRef = useRef<HTMLInputElement>(null)
   const numberInputRef = useRef<HTMLInputElement>(null)
   const prevPrefixLengthRef = useRef(0)
@@ -119,8 +120,9 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
 
   const confirm = () => {
     if (!selectedSticker) return
+    setSavedWasRepeated(currentCount > 0)
     onConfirm([{ sticker: selectedSticker, quantity: 1 }])
-    resetForm(true)
+    setFlow('success')
   }
 
   return (
@@ -232,6 +234,22 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
               </div>
             </div>
           )}
+
+          {flow === 'success' && selectedSticker && (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
+                <Check className="w-8 h-8" strokeWidth={3} />
+              </div>
+              <h2 className="text-xl font-black text-zinc-900">
+                {savedWasRepeated ? 'Repetida guardada' : 'Figurita guardada'}
+              </h2>
+              <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">
+                {savedWasRepeated
+                  ? 'La sumamos a tus repetidas para futuros canjes.'
+                  : 'La sumamos a tu álbum.'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex-shrink-0 p-4 md:pb-8 bg-white border-t border-zinc-200/60 shadow-[0_-4px_15px_rgba(0,0,0,0.02)] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
@@ -268,6 +286,14 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 Guardar figurita
               </button>
             </div>
+          )}
+          {flow === 'success' && (
+            <button
+              onClick={() => resetForm(true)}
+              className="w-full bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
+            >
+              Cargar otra figurita
+            </button>
           )}
         </div>
       </div>
