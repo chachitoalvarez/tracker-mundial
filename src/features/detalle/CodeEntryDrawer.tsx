@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Plus, SquareStack, X } from 'lucide-react'
 import { parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
+import { formatStickerDisplayId } from '@/lib/album'
 import type { AlbumSection, Sticker } from '@/types/album'
 
 interface Props {
@@ -19,7 +20,6 @@ function getCurrentCount(albumData: AlbumSection[], sticker: Sticker): number {
 
 function getStatusLabel(currentCount: number) {
   if (currentCount <= 0) return 'Nueva'
-  if (currentCount === 1) return 'Ya la tenías'
   return 'Repetida'
 }
 
@@ -213,7 +213,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-black text-zinc-900 truncate">
-                      {selectedSticker.nombreFigura || selectedSticker.codigoAlias}
+                      {selectedSticker.nombreFigura || formatStickerDisplayId(selectedSticker.codigoFigura)}
                     </p>
                     <p className="text-xs font-bold text-zinc-400 truncate">
                       {selectedSticker.paisEquipo || selectedSticker.subseccion}
@@ -227,7 +227,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 </div>
 
                 <div className="text-sm font-bold text-zinc-900">
-                  Código: <span className="text-amber-600">{selectedSticker.codigoAlias}</span>
+                  Código: <span className="text-amber-600">{formatStickerDisplayId(selectedSticker.codigoFigura)}</span>
                 </div>
               </div>
             </div>

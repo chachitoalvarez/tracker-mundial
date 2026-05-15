@@ -28,7 +28,7 @@ function buildPrefixIndex(): Map<string, PrefixInfo> {
   const index = new Map<string, PrefixInfo>()
 
   for (const sticker of albumStickers) {
-    const match = sticker.codigoFigura.match(/^([A-Z]{3})(\d{3})$/)
+    const match = sticker.codigoFigura.match(/^([A-Z]{2,4})(\d{3})$/)
     if (!match) continue
 
     const prefix = match[1]
@@ -46,7 +46,7 @@ function buildPrefixIndexFromCatalog(catalog: Sticker[]): Map<string, PrefixInfo
   const index = new Map<string, PrefixInfo>()
 
   for (const sticker of catalog) {
-    const match = sticker.codigoFigura.match(/^([A-Z]{3})(\d{3})$/)
+    const match = sticker.codigoFigura.match(/^([A-Z]{2,4})(\d{3})$/)
     if (!match) continue
 
     const prefix = match[1]
@@ -67,7 +67,7 @@ export function getStickerPrefixes(): string[] {
 export function parseStickerCode(input: string): ParsedStickerCode | null {
   if (!input) return null
   const cleaned = input.trim().toUpperCase().replace(/[\s\-_]/g, '')
-  const match = cleaned.match(/^([A-Z]{3})(\d{1,3})$/)
+  const match = cleaned.match(/^([A-Z]{2,4})(\d{1,3})$/)
   if (!match) return null
 
   const prefix = match[1]

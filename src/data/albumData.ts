@@ -1,78 +1,98 @@
-import rawData from './panini_mundial_2026_album_base_980.json'
-import type { Sticker, AlbumSection, StickerType } from '@/types/album'
-
-interface RawSection {
-  seccion: string
-  subseccion: string
-  codigo_rango: string
-  orden_inicio: number
-  orden_fin: number
-  cantidad: number
-}
+import rawData from './panini_mundial_2026_980_limpio.json'
+import type { Sticker, AlbumSection, StickerType, TipoColeccion, Acabado } from '@/types/album'
 
 interface RawSticker {
   numero_orden: number
   seccion: string
   subseccion: string
   codigo_figura: string
-  codigo_alias: string
   pais_equipo: string
   nombre_figura: string
+  nombre_jugador: string
   tipo_figura: string
-  notas: string
-  album_layer: string
+  tipo_coleccion: string
+  es_especial: boolean
+  acabado: string
 }
 
-// Extraer el prefijo del código_rango (ej: "ARG001-ARG020" → "ARG", "PL000" → "PL")
-function extractBaseCode(rango: string): string {
-  return rango.split(/\d/)[0]
-}
+// ── Album metadata ──
 
 export const albumMeta = {
-  id: rawData.album.id,
+  slug: rawData.album.slug,
   nombre: rawData.album.nombre,
-  totalFiguritas: rawData.album.total_figuritas_base,
-  totalSelecciones: rawData.album.total_selecciones,
+  totalFiguritas: rawData.album.total_figuritas,
 }
 
-export const albumSections: AlbumSection[] = (rawData.secciones as RawSection[]).map(s => ({
-  section: s.subseccion,
-  needed: s.cantidad,
-  collected: {},
-  seccion: s.seccion,
-  subseccion: s.subseccion,
-  codigoBase: extractBaseCode(s.codigo_rango),
-  ordenInicio: s.orden_inicio,
-  ordenFin: s.orden_fin,
-  cantidad: s.cantidad,
-}))
-
-export const albumData: AlbumSection[] = albumSections
+// ── Parse all 980 stickers ──
 
 export const albumStickers: Sticker[] = (rawData.figuritas as RawSticker[]).map(f => ({
+  id: `wc2026:base:${f.codigo_figura}`,
   numeroOrden: f.numero_orden,
   seccion: f.seccion,
   subseccion: f.subseccion,
   codigoFigura: f.codigo_figura,
-  codigoAlias: f.codigo_alias,
   paisEquipo: f.pais_equipo,
   nombreFigura: f.nombre_figura,
+  nombreJugador: f.nombre_jugador,
   tipoFigura: f.tipo_figura as StickerType,
-  notas: f.notas,
-  albumLayer: f.album_layer,
+  tipoColeccion: f.tipo_coleccion as TipoColeccion,
+  esEspecial: f.es_especial,
+  acabado: f.acabado as Acabado,
 }))
 
 // Integrity check
 if (albumStickers.length !== 980) {
-  console.error('Album integrity check failed:', albumStickers.length)
+  console.error('Album integrity check failed: expected 980, got', albumStickers.length)
 }
 
-// Índice por código canónico para lookup O(1)
+// ── Build sections from sticker groupings ──
+
+function buildSections(): AlbumSection[] {
+  const sectionMap = new Map<string, { stickers: Sticker[]; seccion: string }>()
+
+  for (const s of albumStickers) {
+    const existing = sectionMap.get(s.subseccion)
+    if (existing) {
+      existing.stickers.push(s)
+    } else {
+      sectionMap.set(s.subseccion, { stickers: [s], seccion: s.seccion })
+    }
+  }
+
+  const sections: AlbumSection[] = []
+  for (const [subseccion, { stickers, seccion }] of sectionMap) {
+    const sorted = stickers.sort((a, b) => a.numeroOrden - b.numeroOrden)
+    const first = sorted[0]
+    const last = sorted[sorted.length - 1]
+    // Extract code prefix: "ARG001" → "ARG", "PL000" → "PL"
+    const prefixMatch = first.codigoFigura.match(/^([A-Z]+)/)
+    const codigoBase = prefixMatch ? prefixMatch[1] : ''
+
+    sections.push({
+      section: subseccion,
+      needed: stickers.length,
+      collected: {},
+      seccion,
+      subseccion,
+      codigoBase,
+      ordenInicio: first.numeroOrden,
+      ordenFin: last.numeroOrden,
+      cantidad: stickers.length,
+    })
+  }
+
+  return sections.sort((a, b) => a.ordenInicio - b.ordenInicio)
+}
+
+export const albumSections: AlbumSection[] = buildSections()
+export const albumData: AlbumSection[] = albumSections
+
+// ── Indices for O(1) lookups ──
+
 export const stickersByCode: Map<string, Sticker> = new Map(
   albumStickers.map(s => [s.codigoFigura, s])
 )
 
-// Índice por subsección para agrupar
 export const stickersBySubseccion: Map<string, Sticker[]> = albumStickers.reduce(
   (acc, sticker) => {
     const arr = acc.get(sticker.subseccion) ?? []

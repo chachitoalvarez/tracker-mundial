@@ -21,7 +21,7 @@ function matchesSearch(sticker: Sticker, query: string) {
   const q = trimmed.toLowerCase()
   return (
     sticker.codigoFigura.toLowerCase().includes(q) ||
-    sticker.codigoAlias.toLowerCase().includes(q) ||
+    formatStickerDisplayId(sticker.codigoFigura).toLowerCase().includes(q) ||
     sticker.nombreFigura.toLowerCase().includes(q) ||
     sticker.paisEquipo.toLowerCase().includes(q)
   )

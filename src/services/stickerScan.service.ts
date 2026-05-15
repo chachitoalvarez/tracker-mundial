@@ -1,7 +1,7 @@
 import Tesseract from 'tesseract.js'
 import { albumStickers } from '@/data/albumData'
 import type { Sticker } from '@/types/album'
-import { findStickerByCode, getStickerByCanonicalCode } from '@/lib/album'
+import { findStickerByCode, getStickerByCanonicalCode, formatStickerDisplayId } from '@/lib/album'
 
 export interface DetectedSticker {
   id: string
@@ -378,7 +378,7 @@ function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode = 'normal'):
     quantity: 1,
     status: 'detected',
     sticker,
-    rawText: sticker.codigoAlias,
+    rawText: formatStickerDisplayId(sticker.codigoFigura),
     confidence: 100,
   }
 
@@ -387,9 +387,9 @@ function mockDetectStickersFromPhoto(file: File, mode: ScanMockMode = 'normal'):
     debug: {
       originalSize: { width: 0, height: 0 },
       approximateRegion: { x: 0, y: 0, width: 0, height: 0 },
-      rawText: sticker.codigoAlias,
-      cleanedText: sticker.codigoAlias,
-      regexMatch: sticker.codigoAlias,
+      rawText: formatStickerDisplayId(sticker.codigoFigura),
+      cleanedText: formatStickerDisplayId(sticker.codigoFigura),
+      regexMatch: formatStickerDisplayId(sticker.codigoFigura),
       normalizedCode: sticker.codigoFigura,
       existsInCatalog: true,
       confidence: 100,

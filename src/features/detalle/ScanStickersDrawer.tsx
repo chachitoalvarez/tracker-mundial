@@ -357,7 +357,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm }: Props) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-black text-zinc-900 truncate">
-                          {item.sticker?.nombreFigura || item.sticker?.codigoAlias || 'Necesita revisión'}
+                          {item.sticker ? (item.sticker.nombreFigura || formatStickerDisplayId(item.sticker.codigoFigura)) : 'Necesita revisión'}
                         </p>
                         <p className={`text-xs font-bold truncate ${item.status === 'needs_review' ? 'text-amber-600' : 'text-zinc-400'}`}>
                           {item.status === 'needs_review'
@@ -403,7 +403,7 @@ export function ScanStickersDrawer({ isOpen, onClose, onConfirm }: Props) {
                             className="text-left bg-white border border-zinc-200 rounded-xl px-3 py-2 hover:border-amber-300 hover:bg-amber-50 transition-colors"
                           >
                             <span className="text-xs font-black text-amber-600 mr-2">{formatStickerDisplayId(sticker.codigoFigura)}</span>
-                            <span className="text-sm font-bold text-zinc-800">{sticker.nombreFigura || sticker.codigoAlias}</span>
+                            <span className="text-sm font-bold text-zinc-800">{sticker.nombreFigura || formatStickerDisplayId(sticker.codigoFigura)}</span>
                             <span className="text-xs font-medium text-zinc-400 ml-2">{sticker.subseccion}</span>
                           </button>
                         ))}

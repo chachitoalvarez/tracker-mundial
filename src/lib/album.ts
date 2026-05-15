@@ -31,7 +31,7 @@ export function formatStickerDisplayId(codigoFigura: string): string {
 }
 
 /**
- * Búsqueda libre: por código, alias, nombre del jugador, o país/equipo.
+ * Búsqueda libre: por código, nombre del jugador, nombre de la figurita, o país/equipo.
  * Devuelve sticker matches ordenados por relevancia simple.
  */
 export function searchStickers(query: string): Sticker[] {
@@ -42,12 +42,13 @@ export function searchStickers(query: string): Sticker[] {
   const codeMatch = findStickerByCode(query)
   if (codeMatch) return [codeMatch]
 
-  // Si no, búsqueda libre por nombre o país
+  // Búsqueda libre por nombre, jugador, o país
   return albumStickers.filter(s =>
     s.nombreFigura.toLowerCase().includes(q) ||
+    s.nombreJugador.toLowerCase().includes(q) ||
     s.paisEquipo.toLowerCase().includes(q) ||
     s.subseccion.toLowerCase().includes(q)
-  ).slice(0, 50) // limitar resultados
+  ).slice(0, 50)
 }
 
 export function describeStickerCode(code: string): string {
@@ -57,12 +58,19 @@ export function describeStickerCode(code: string): string {
 }
 
 export function getPlayerInfo(section: string, number: number): PlayerInfo | null {
-  const sticker = stickersBySubseccion.get(section)?.[number - 1]
+  const stickers = stickersBySubseccion.get(section)
+  if (!stickers) return null
+
+  // Find by 1-based index within the subsection
+  const sticker = stickers[number - 1]
   if (!sticker) return null
+
+  // Use nombre_jugador when available, fall back to nombre_figura
+  const displayName = sticker.nombreJugador || sticker.nombreFigura || `Figurita ${number}`
 
   return {
     number,
-    name: sticker.nombreFigura || sticker.codigoAlias || `Figurita ${number}`,
+    name: displayName,
     role: sticker.tipoFigura === 'especial' ? 'special' : undefined,
   }
 }

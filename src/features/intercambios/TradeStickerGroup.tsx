@@ -40,7 +40,7 @@ export function TradeStickerGroup({ sectionName, stickers, variant, defaultOpen 
             .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
             .map(([code, count]) => {
               const sticker = getStickerByCanonicalCode(code)
-              const displayName = sticker?.nombreFigura || sticker?.codigoAlias || code
+              const displayName = sticker ? (sticker.nombreFigura || formatStickerDisplayId(sticker.codigoFigura)) : code
 
               return (
                 <li key={code} className="flex items-center gap-3 px-3 py-2.5">
