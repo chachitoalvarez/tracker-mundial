@@ -12,14 +12,21 @@ interface Props {
 
 function getTradeSummaryLabel(user: LeaderboardEntry): string {
   const summary = user.tradeSummary
-  if (user.isMe) return 'Tu perfil'
+  if (user.isMe) return 'Tu posición'
   if (!summary) return 'Calculando cruce...'
   if (summary.status === 'not_accessible') return 'Perfil privado'
   if (summary.status === 'error') return 'Cruce no disponible'
   if (summary.theyOfferCount > 0 && summary.iOfferCount > 0) return 'Buen cruce'
-  if (summary.theyOfferCount > 0) return 'Te aporta figuritas'
+  if (summary.theyOfferCount > 0) return 'Te faltan figus'
   if (summary.iOfferCount > 0) return 'Podés ayudarle'
   return 'Sin cruce por ahora'
+}
+
+function RankingMark({ index, compact = false }: { index: number; compact?: boolean }) {
+  if (index === 0) return <Medal className={`${compact ? 'h-6 w-6' : 'h-10 w-10 scale-110'} text-yellow-500`} strokeWidth={2.5} />
+  if (index === 1) return <Medal className={`${compact ? 'h-5.5 w-5.5' : 'h-8 w-8'} text-zinc-400`} strokeWidth={2.5} />
+  if (index === 2) return <Medal className={`${compact ? 'h-5.5 w-5.5' : 'h-8 w-8'} text-amber-700`} strokeWidth={2.5} />
+  return <span className={`${compact ? 'text-sm' : 'text-xl'} font-black text-zinc-300`}>#{index + 1}</span>
 }
 
 function MobileRankingItem({ user, index, onClickUser, onClickMe }: {
@@ -28,10 +35,10 @@ function MobileRankingItem({ user, index, onClickUser, onClickMe }: {
   onClickUser: (user: LeaderboardEntry) => void
   onClickMe: () => void
 }) {
-  const percentage = Math.round((user.completed / user.needed) * 100)
+  const percentage = user.needed > 0 ? Math.round((user.completed / user.needed) * 100) : 0
   const isMe = !!user.isMe
   const tradeSummary = user.tradeSummary
-  const showTrade = !isMe && tradeSummary && tradeSummary.status === 'ok' && (
+  const showTrade = !isMe && tradeSummary?.status === 'ok' && (
     tradeSummary.theyOfferCount > 0 || tradeSummary.iOfferCount > 0
   )
 
@@ -39,56 +46,48 @@ function MobileRankingItem({ user, index, onClickUser, onClickMe }: {
     <button
       type="button"
       onClick={() => isMe ? onClickMe() : onClickUser(user)}
-      className={`w-full text-left bg-white border border-zinc-200/70 rounded-2xl p-3.5 shadow-sm active:scale-[0.99] transition-all ${isMe ? 'bg-amber-50/40 border-amber-200' : 'hover:bg-zinc-50'}`}
+      className={`w-full rounded-2xl border px-3 py-2.5 text-left shadow-sm transition-all active:scale-[0.99] ${
+        isMe ? 'border-amber-200 bg-amber-50/40' : 'border-zinc-200/70 bg-white hover:bg-zinc-50'
+      }`}
     >
-      <div className="grid grid-cols-[1fr_78px] gap-3 items-start">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-9 flex-shrink-0 pt-0.5 text-center">
-          {index === 0 ? <Medal className="w-6 h-6 text-yellow-500 mx-auto" strokeWidth={2.5} /> :
-           index === 1 ? <Medal className="w-5.5 h-5.5 text-zinc-400 mx-auto" strokeWidth={2.5} /> :
-           index === 2 ? <Medal className="w-5.5 h-5.5 text-amber-700 mx-auto" strokeWidth={2.5} /> :
-           <span className="font-black text-zinc-300 text-sm">#{index + 1}</span>}
-          </div>
+      <div className="grid grid-cols-[32px_36px_minmax(0,1fr)_40px] items-start gap-x-2.5">
+        <div className="flex h-9 w-8 items-center justify-center">
+          <RankingMark index={index} compact />
+        </div>
 
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 shadow-sm ${isMe ? 'bg-gradient-to-br from-amber-100 to-amber-50 border-white' : 'bg-zinc-100 border-white'}`}>
-              <User className={`w-5 h-5 ${isMe ? 'text-amber-600' : 'text-zinc-400'}`} />
-            </div>
-            <div className="min-w-0">
-              <p className={`font-black truncate leading-tight ${isMe ? 'text-amber-900 text-[15px]' : 'text-zinc-800 text-[15px]'}`}>
-                {user.name}
-                {isMe && (
-                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider align-middle">
-                    Tú
-                  </span>
-                )}
+        <div className={`flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-sm ${
+          isMe ? 'border-white bg-gradient-to-br from-amber-100 to-amber-50' : 'border-white bg-zinc-100'
+        }`}>
+          <User className={`h-4.5 w-4.5 ${isMe ? 'text-amber-600' : 'text-zinc-400'}`} />
+        </div>
+
+        <div className="min-w-0">
+          <p className={`truncate text-[15px] font-black leading-5 ${isMe ? 'text-amber-900' : 'text-zinc-800'}`}>
+            {user.name}
+          </p>
+          {isMe ? (
+            <p className="mt-0.5 text-xs font-semibold text-amber-700">{getTradeSummaryLabel(user)}</p>
+          ) : showTrade ? (
+            <div className="mt-0.5 space-y-0.5">
+              <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-black leading-4 text-emerald-700">
+                {getTradeSummaryLabel(user)}
+              </span>
+              <p className="truncate text-[11px] font-semibold leading-4 text-zinc-500">
+                Recibís {tradeSummary.theyOfferCount} · Entregás {tradeSummary.iOfferCount}
               </p>
-              {showTrade ? (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-100">
-                    {getTradeSummaryLabel(user)}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full">
-                    <ArrowDownLeft className="w-3 h-3" strokeWidth={3} />
-                    Recibís {tradeSummary?.status === 'ok' ? tradeSummary.theyOfferCount : '-'}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
-                    <ArrowUpRight className="w-3 h-3" strokeWidth={3} />
-                    Entregás {tradeSummary?.status === 'ok' ? tradeSummary.iOfferCount : '-'}
-                  </span>
-                </div>
-              ) : null}
             </div>
-          </div>
+          ) : (
+            <p className="mt-0.5 truncate text-xs font-semibold text-zinc-500">{getTradeSummaryLabel(user)}</p>
+          )}
+        </div>
 
-          <div className="text-right shrink-0 pt-0.5">
-            <div className={`text-sm font-black ${isMe ? 'text-amber-600' : 'text-zinc-900'}`}>{percentage}%</div>
-            <div className="mt-2 ml-auto w-full max-w-[78px] h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ease-out ${getProgressColor(percentage)}`}
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
+        <div className="w-10 text-right">
+          <div className={`text-sm font-black leading-5 ${isMe ? 'text-amber-600' : 'text-zinc-900'}`}>{percentage}%</div>
+          <div className="mt-1.5 ml-auto h-1.5 w-10 overflow-hidden rounded-full bg-zinc-100">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ease-out ${getProgressColor(percentage)}`}
+              style={{ width: `${percentage}%` }}
+            />
           </div>
         </div>
       </div>
@@ -99,18 +98,18 @@ function MobileRankingItem({ user, index, onClickUser, onClickMe }: {
 export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickUser, onClickMe }: Props) {
   if (isLoading) {
     return (
-      <div className="bg-white border border-zinc-200/60 rounded-3xl overflow-hidden mt-4 lg:mt-4 shadow-sm">
+      <div className="mt-4 overflow-hidden rounded-3xl border border-zinc-200/60 bg-white shadow-sm lg:mt-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="p-4 sm:p-6 flex items-center gap-6 border-b border-zinc-100 last:border-0 animate-pulse">
-            <div className="w-10 h-10 bg-zinc-100 rounded-full flex-shrink-0" />
-            <div className="w-14 h-14 bg-zinc-100 rounded-full flex-shrink-0" />
+          <div key={i} className="flex animate-pulse items-center gap-6 border-b border-zinc-100 p-4 last:border-0 sm:p-6">
+            <div className="h-10 w-10 flex-shrink-0 rounded-full bg-zinc-100" />
+            <div className="h-14 w-14 flex-shrink-0 rounded-full bg-zinc-100" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-zinc-100 rounded-full w-1/3" />
-              <div className="h-3 bg-zinc-100 rounded-full w-1/4" />
+              <div className="h-4 w-1/3 rounded-full bg-zinc-100" />
+              <div className="h-3 w-1/4 rounded-full bg-zinc-100" />
             </div>
-            <div className="w-56 hidden sm:block space-y-2">
-              <div className="h-3 bg-zinc-100 rounded-full w-full" />
-              <div className="h-3 bg-zinc-100 rounded-full w-2/3" />
+            <div className="hidden w-56 space-y-2 sm:block">
+              <div className="h-3 w-full rounded-full bg-zinc-100" />
+              <div className="h-3 w-2/3 rounded-full bg-zinc-100" />
             </div>
           </div>
         ))}
@@ -120,8 +119,8 @@ export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickU
 
   if (leaderboard.length === 0) {
     return (
-      <div className="bg-white border border-zinc-200/60 rounded-3xl mt-4 lg:mt-4 shadow-sm px-6 py-8 flex items-start gap-3 text-sm text-zinc-500">
-        <UsersRound className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={2.5} />
+      <div className="mt-4 flex items-start gap-3 rounded-3xl border border-zinc-200/60 bg-white px-6 py-8 text-sm text-zinc-500 shadow-sm lg:mt-4">
+        <UsersRound className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-400" strokeWidth={2.5} />
         {emptyMessage ?? 'No hay datos disponibles.'}
       </div>
     )
@@ -130,17 +129,16 @@ export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickU
   const hasOthers = leaderboard.some(u => !u.isMe)
 
   return (
-    <div className="bg-white border border-zinc-200/60 rounded-3xl overflow-hidden mt-4 lg:mt-4 shadow-sm">
+    <div className="mt-4 overflow-hidden rounded-3xl border border-zinc-200/60 bg-white shadow-sm lg:mt-4">
       {!hasOthers && (
-        <div className="px-6 py-4 border-b border-zinc-100 bg-zinc-50/50 flex items-center gap-3 text-sm text-zinc-500">
-          <UsersRound className="w-4 h-4 text-zinc-400 flex-shrink-0" strokeWidth={2.5} />
+        <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50/50 px-6 py-4 text-sm text-zinc-500">
+          <UsersRound className="h-4 w-4 flex-shrink-0 text-zinc-400" strokeWidth={2.5} />
           Invita amigos para comparar su progreso. El ranking se actualizará cuando otros usuarios se unan.
         </div>
       )}
 
       <div className="divide-y divide-zinc-100">
-        {/* Mobile compact list */}
-        <div className="lg:hidden">
+        <div className="space-y-2 p-2 lg:hidden">
           {leaderboard.map((user, index) => (
             <MobileRankingItem
               key={user.id}
@@ -152,49 +150,47 @@ export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickU
           ))}
         </div>
 
-        {/* Desktop / tablet */}
-        <div className="hidden lg:grid grid-cols-1 divide-y divide-zinc-100">
+        <div className="hidden grid-cols-1 divide-y divide-zinc-100 lg:grid">
           {leaderboard.map((user, index) => {
-            const percentage = Math.round((user.completed / user.needed) * 100)
+            const percentage = user.needed > 0 ? Math.round((user.completed / user.needed) * 100) : 0
             const isMe = !!user.isMe
 
             return (
               <div
                 key={user.id}
                 onClick={() => isMe ? onClickMe() : onClickUser(user)}
-                className={`p-4 lg:p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all group cursor-pointer ${isMe ? 'bg-amber-50/30 relative z-10' : 'hover:bg-zinc-50/80'}`}
+                className={`group flex cursor-pointer flex-col items-start gap-4 p-4 transition-all sm:flex-row sm:items-center sm:gap-6 sm:p-6 lg:p-4 ${isMe ? 'relative z-10 bg-amber-50/30' : 'hover:bg-zinc-50/80'}`}
               >
-                <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
-                  {index === 0 ? <Medal className="w-10 h-10 text-yellow-500 drop-shadow-md scale-110" strokeWidth={2.5} /> :
-                   index === 1 ? <Medal className="w-8 h-8 text-zinc-400 drop-shadow-sm" strokeWidth={2.5} /> :
-                   index === 2 ? <Medal className="w-8 h-8 text-amber-700 drop-shadow-sm" strokeWidth={2.5} /> :
-                   <span className="font-black text-zinc-300 text-xl group-hover:text-zinc-400 transition-colors">#{index + 1}</span>}
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                  <RankingMark index={index} />
                 </div>
 
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className={`w-14 h-14 lg:w-12 lg:h-12 rounded-full flex items-center justify-center flex-shrink-0 border-2 shadow-sm ${isMe ? 'bg-gradient-to-br from-amber-100 to-amber-50 border-white' : 'bg-zinc-100 border-white'}`}>
-                    <User className={`w-6 h-6 lg:w-5 lg:h-5 ${isMe ? 'text-amber-600' : 'text-zinc-400'}`} />
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                  <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 shadow-sm lg:h-12 lg:w-12 ${
+                    isMe ? 'border-white bg-gradient-to-br from-amber-100 to-amber-50' : 'border-white bg-zinc-100'
+                  }`}>
+                    <User className={`h-6 w-6 lg:h-5 lg:w-5 ${isMe ? 'text-amber-600' : 'text-zinc-400'}`} />
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-black truncate tracking-tight flex items-center gap-2 ${isMe ? 'text-amber-900 text-xl lg:text-lg' : 'text-zinc-800 text-lg lg:text-[17px]'}`}>
+                    <p className={`flex items-center gap-2 truncate font-black tracking-tight ${isMe ? 'text-xl text-amber-900 lg:text-lg' : 'text-lg text-zinc-800 lg:text-[17px]'}`}>
                       {user.name}
-                      {isMe && <span className="text-[10px] uppercase tracking-wider bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">Tú</span>}
+                      {isMe && <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">Tú</span>}
                     </p>
                     {!isMe && (
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className={`text-[11px] font-black px-2.5 py-1 rounded-full border ${
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${
                           user.tradeSummary?.status === 'ok' && (user.tradeSummary.theyOfferCount > 0 || user.tradeSummary.iOfferCount > 0)
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                            : 'bg-zinc-50 text-zinc-500 border-zinc-200'
+                            ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                            : 'border-zinc-200 bg-zinc-50 text-zinc-500'
                         }`}>
                           {getTradeSummaryLabel(user)}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full">
-                          <ArrowDownLeft className="w-3 h-3" strokeWidth={3} />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">
+                          <ArrowDownLeft className="h-3 w-3" strokeWidth={3} />
                           Recibís {user.tradeSummary?.status === 'ok' ? user.tradeSummary.theyOfferCount : '-'}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
-                          <ArrowUpRight className="w-3 h-3" strokeWidth={3} />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">
+                          <ArrowUpRight className="h-3 w-3" strokeWidth={3} />
                           Entregás {user.tradeSummary?.status === 'ok' ? user.tradeSummary.iOfferCount : '-'}
                         </span>
                       </div>
@@ -202,11 +198,11 @@ export function LeaderboardList({ leaderboard, isLoading, emptyMessage, onClickU
                   </div>
                 </div>
 
-                <div className="w-full sm:w-56 lg:w-64 flex flex-col gap-2 flex-shrink-0 mt-3 sm:mt-0 bg-white sm:bg-transparent p-3 sm:p-0 rounded-2xl border sm:border-none border-zinc-100 shadow-sm sm:shadow-none">
-                  <div className="flex justify-end items-center text-sm font-black">
+                <div className="mt-3 flex w-full flex-shrink-0 flex-col gap-2 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm sm:mt-0 sm:w-56 sm:border-none sm:bg-transparent sm:p-0 sm:shadow-none lg:w-64">
+                  <div className="flex items-center justify-end text-sm font-black">
                     <span className={isMe ? 'text-amber-600' : 'text-zinc-900'}>{percentage}%</span>
                   </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-2 overflow-hidden shadow-inner">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 shadow-inner">
                     <div className={`h-full rounded-full transition-all duration-1000 ease-out ${getProgressColor(percentage)}`} style={{ width: `${percentage}%` }} />
                   </div>
                 </div>

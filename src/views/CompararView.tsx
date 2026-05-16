@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Plus, X, Settings, UsersRound } from 'lucide-react'
+import { ChevronDown, Globe2, Plus, Settings, UsersRound, X } from 'lucide-react'
 import { LeaderboardList } from '@/features/comparar/LeaderboardList'
 import { GroupManager } from '@/features/comparar/GroupManager'
 import { CreateGroupForm } from '@/features/comparar/CreateGroupForm'
@@ -58,29 +58,28 @@ export function CompararView({
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl hidden sm:block">
               <UsersRound className="w-5 h-5" strokeWidth={2.5} />
             </div>
-            <select
-            className="flex-1 md:w-64 px-4 py-3 lg:py-0 h-11 lg:h-11 bg-zinc-50 border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 cursor-pointer transition-all appearance-none disabled:opacity-60"
-              value={compareFilter}
-              onChange={e => onFilterChange(e.target.value)}
-              disabled={isLoadingGroups}
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundPosition: 'right .5rem center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '1.5em 1.5em',
-              }}
-            >
-              <option value="all">
-                {isLoadingGroups ? 'Cargando grupos...' : '🌍 Todos (Global)'}
-              </option>
-              {!isLoadingGroups && groups.length > 0 && (
-                <optgroup label="Tus Grupos Privados">
-                  {groups.map(g => (
-                    <option key={g.id} value={g.id}>👥 {g.name}</option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+
+            <div className="relative flex-1 md:w-64">
+              <Globe2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-600" strokeWidth={2.5} />
+              <select
+                className="h-12 min-h-12 w-full appearance-none rounded-2xl border border-zinc-200 bg-zinc-50 pl-11 pr-11 text-sm font-semibold leading-none text-zinc-900 transition-all focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-500/20 disabled:opacity-60 lg:h-11 lg:min-h-11"
+                value={compareFilter}
+                onChange={e => onFilterChange(e.target.value)}
+                disabled={isLoadingGroups}
+              >
+                <option value="all">
+                  {isLoadingGroups ? 'Cargando grupos...' : 'Todos (Global)'}
+                </option>
+                {!isLoadingGroups && groups.length > 0 && (
+                  <optgroup label="Tus Grupos Privados">
+                    {groups.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" strokeWidth={2.5} />
+            </div>
           </div>
 
           {compareFilter !== 'all' && activeGroupObj && isGroupOwner && (
