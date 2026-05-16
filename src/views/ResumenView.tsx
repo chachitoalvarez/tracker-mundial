@@ -6,16 +6,30 @@ import type { AlbumSection, AlbumStats } from '@/types/album'
 
 interface Props {
   stats: AlbumStats
+  unlockedAchievementsCount: number
+  totalAchievementsCount: number
   filteredData: AlbumSection[]
   searchTerm: string
   setSearchTerm: (v: string) => void
   onGoToDetail: (section: string) => void
 }
 
-export function ResumenView({ stats, filteredData, searchTerm, setSearchTerm, onGoToDetail }: Props) {
+export function ResumenView({
+  stats,
+  unlockedAchievementsCount,
+  totalAchievementsCount,
+  filteredData,
+  searchTerm,
+  setSearchTerm,
+  onGoToDetail,
+}: Props) {
   return (
     <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-      <StatsCards stats={stats} />
+      <StatsCards
+        stats={stats}
+        unlockedAchievementsCount={unlockedAchievementsCount}
+        totalAchievementsCount={totalAchievementsCount}
+      />
 
       <SearchInput
         value={searchTerm}

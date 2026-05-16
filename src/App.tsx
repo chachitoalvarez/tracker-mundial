@@ -159,6 +159,8 @@ function AppShell() {
               {activeTab === 'resumen' && (
                 <ResumenView
                   stats={stats}
+                  unlockedAchievementsCount={unlockedCount}
+                  totalAchievementsCount={achievements.length}
                   filteredData={filteredData}
                   searchTerm={searchTerm}
                   setSearchTerm={setSearchTerm}
