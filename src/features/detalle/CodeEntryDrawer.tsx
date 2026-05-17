@@ -34,12 +34,26 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const [savedWasRepeated, setSavedWasRepeated] = useState(false)
   const prefixInputRef = useRef<HTMLInputElement>(null)
   const numberInputRef = useRef<HTMLInputElement>(null)
+  const saveButtonRef = useRef<HTMLButtonElement>(null)
+  const loadAnotherButtonRef = useRef<HTMLButtonElement>(null)
   const prevPrefixLengthRef = useRef(0)
 
   useEffect(() => {
     if (!isOpen) return
     requestAnimationFrame(() => prefixInputRef.current?.focus())
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (flow === 'review') {
+      requestAnimationFrame(() => saveButtonRef.current?.focus())
+    }
+
+    if (flow === 'success') {
+      requestAnimationFrame(() => loadAnotherButtonRef.current?.focus())
+    }
+  }, [flow, isOpen])
 
   useEffect(() => {
     if (prefix.length === 3 && prevPrefixLengthRef.current < 3) {
@@ -319,6 +333,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
               </button>
               <button
                 onClick={confirm}
+                ref={saveButtonRef}
                 className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
               >
                 Guardar figurita
@@ -326,8 +341,9 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
             </div>
           )}
           {flow === 'success' && (
-              <button
+            <button
               onClick={() => resetForm(true)}
+              ref={loadAnotherButtonRef}
               className="w-full bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
             >
               Cargar otra figurita
