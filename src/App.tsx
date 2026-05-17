@@ -102,12 +102,13 @@ function AppShell() {
     isManagingGroup, setIsManagingGroup,
     newGroupName, setNewGroupName,
     newGroupEmails, setNewGroupEmails,
+    groupsRevision,
     activeGroupObj,
     handleFilterChange, handleCreateGroup,
     handleRemoveMember, handleDeleteGroup, refresh: refreshGroups,
   } = useGroups()
 
-  const { leaderboard, isLoadingLeaderboard } = useLeaderboard(compareFilter)
+  const { leaderboard, isLoadingLeaderboard } = useLeaderboard(compareFilter, groupsRevision)
 
   if (!authInitialized) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
   if (!isAuthenticated) return <LoginView />

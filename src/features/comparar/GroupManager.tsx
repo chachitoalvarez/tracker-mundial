@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AtSign, Clock, Settings, Trash2, User, UserPlus } from 'lucide-react'
 import * as groupsService from '@/services/groups.service'
 import type { Group } from '@/types/group'
@@ -17,10 +17,49 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
   const [invite, setInvite] = useState('')
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [isInviting, setIsInviting] = useState(false)
+  const [suggestions, setSuggestions] = useState<groupsService.UserSuggestion[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false)
 
   const ownerMember = group.members.find(m => m.userId === group.ownerId)
   const otherMembers = group.members.filter(m => m.userId !== group.ownerId)
   const isOwner = currentUserEmail != null && ownerMember?.email === currentUserEmail
+  const inviteValue = invite.trim()
+  const isEmailInvite = EMAIL_RE.test(inviteValue.toLowerCase())
+
+  useEffect(() => {
+    if (!inviteValue || isEmailInvite || hasSelectedSuggestion) {
+      setSuggestions([])
+      setIsSearching(false)
+      setSearchError(null)
+      return
+    }
+
+    const normalizedUsername = inviteValue.replace(/^@/, '')
+    if (normalizedUsername.length < 2) {
+      setSuggestions([])
+      setIsSearching(false)
+      setSearchError(null)
+      return
+    }
+
+    let active = true
+    setIsSearching(true)
+    setSearchError(null)
+    const timeoutId = window.setTimeout(async () => {
+      const { data, error } = await groupsService.searchUsersByUsername(normalizedUsername)
+      if (!active) return
+      setSuggestions(data)
+      setSearchError(error)
+      setIsSearching(false)
+    }, 250)
+
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+    }
+  }, [inviteValue, isEmailInvite, hasSelectedSuggestion])
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +97,7 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
       }
 
       setInvite('')
+      setSuggestions([])
       await onRefresh()
     } catch {
       setInviteError('No se pudo añadir al grupo')
@@ -144,11 +184,41 @@ export function GroupManager({ group, currentUserEmail, onRemoveMember, onDelete
                 <input
                   type="text"
                   value={invite}
-                  onChange={e => { setInvite(e.target.value); setInviteError(null) }}
+                  onChange={e => {
+                    setInvite(e.target.value)
+                    setInviteError(null)
+                    setHasSelectedSuggestion(false)
+                  }}
                   placeholder="Ej: juan@email.com o @usuario123"
                   disabled={isInviting}
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium placeholder-zinc-400 focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all disabled:opacity-60"
                 />
+                {!hasSelectedSuggestion && !isEmailInvite && inviteValue.replace(/^@/, '').length >= 2 && (isSearching || !!searchError || suggestions.length > 0) && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+                    {isSearching ? (
+                      <p className="px-3 py-2.5 text-xs font-medium text-zinc-400">Buscando usuarios...</p>
+                    ) : searchError ? (
+                      <p className="px-3 py-2.5 text-xs font-medium text-red-600">No pudimos buscar usuarios.</p>
+                    ) : (
+                      suggestions.map(suggestion => (
+                        <button
+                          key={suggestion.userId}
+                          type="button"
+                          onClick={() => {
+                            setInvite(suggestion.username)
+                            setSuggestions([])
+                            setInviteError(null)
+                            setHasSelectedSuggestion(true)
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-zinc-700 hover:bg-amber-50"
+                        >
+                          <User className="h-4 w-4 text-zinc-400" />
+                          {suggestion.username}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               <p className="text-[10px] text-slate-400 px-0.5">
                 Ingresá el correo exacto o el usuario, con o sin @.

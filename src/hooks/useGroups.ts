@@ -14,12 +14,16 @@ export function useGroups() {
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupEmails, setNewGroupEmails] = useState('')
   const [manageEmails, setManageEmails] = useState('') // kept for legacy; unused by GroupManager
+  const [groupsRevision, setGroupsRevision] = useState(0)
 
   const activeGroupObj = groups.find(g => g.id === compareFilter) ?? null
 
   const refresh = useCallback(async () => {
     const { data, error } = await groupsService.listGroups()
-    if (!error) setGroups(data)
+    if (!error) {
+      setGroups(data)
+      setGroupsRevision(current => current + 1)
+    }
   }, [])
 
   useEffect(() => {
@@ -103,6 +107,7 @@ export function useGroups() {
     manageEmails,
     setManageEmails,
     activeGroupObj,
+    groupsRevision,
     handleFilterChange,
     handleCreateGroup,
     handleAddMembersToGroup,

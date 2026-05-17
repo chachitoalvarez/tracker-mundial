@@ -3,7 +3,7 @@ import * as leaderboardService from '@/services/leaderboard.service'
 import { getTradeMatch } from '@/services/trades.service'
 import type { LeaderboardEntry } from '@/types/user'
 
-export function useLeaderboard(compareFilter: string) {
+export function useLeaderboard(compareFilter: string, refreshKey = 0) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false)
 
@@ -72,7 +72,7 @@ export function useLeaderboard(compareFilter: string) {
     return () => {
       cancelled = true
     }
-  }, [compareFilter])
+  }, [compareFilter, refreshKey])
 
   return { leaderboard, isLoadingLeaderboard }
 }

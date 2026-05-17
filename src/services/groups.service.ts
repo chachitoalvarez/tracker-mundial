@@ -129,6 +129,31 @@ export async function resolveUsernameToEmail(username: string): Promise<string |
   return data as string
 }
 
+export interface UserSuggestion {
+  userId: string
+  username: string
+}
+
+export async function searchUsersByUsername(query: string): Promise<{ data: UserSuggestion[]; error: string | null }> {
+  const normalizedQuery = query.trim().replace(/^@/, '')
+  if (normalizedQuery.length < 2) return { data: [], error: null }
+
+  const { data, error } = await supabase.rpc('search_users_by_username', {
+    p_query: normalizedQuery,
+    p_limit: 5,
+  })
+
+  if (error) return { data: [], error: error.message }
+
+  return {
+    data: ((data ?? []) as Array<{ user_id: string; username: string }>).map(row => ({
+      userId: row.user_id,
+      username: row.username,
+    })),
+    error: null,
+  }
+}
+
 export async function addMemberByEmail(groupId: string, email: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc('invite_to_group', { p_group_id: groupId, p_email: email })
   return { error: error?.message ?? null }
