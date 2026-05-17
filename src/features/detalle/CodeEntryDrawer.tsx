@@ -37,6 +37,11 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const prevPrefixLengthRef = useRef(0)
 
   useEffect(() => {
+    if (!isOpen) return
+    requestAnimationFrame(() => prefixInputRef.current?.focus())
+  }, [isOpen])
+
+  useEffect(() => {
     if (prefix.length === 3 && prevPrefixLengthRef.current < 3) {
       requestAnimationFrame(() => numberInputRef.current?.focus())
     }
@@ -69,6 +74,17 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
     const cleaned = value.replace(/\D/g, '').slice(0, 3)
     setNumber(cleaned)
     setError(null)
+  }
+
+  const handlePrefixFocus = () => {
+    setPrefix('')
+    setError(null)
+    prevPrefixLengthRef.current = 0
+  }
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    searchSticker()
   }
 
   const resetForm = (preservePrefix = true) => {
@@ -125,10 +141,27 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
     setFlow('success')
   }
 
+  const handleDrawerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Enter') return
+
+    if (flow === 'review') {
+      e.preventDefault()
+      confirm()
+    }
+
+    if (flow === 'success') {
+      e.preventDefault()
+      resetForm(true)
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-zinc-900/60 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end bg-zinc-900/60 md:backdrop-blur-sm animate-in fade-in">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="w-full md:w-[460px] bg-zinc-50 max-h-[92dvh] md:max-h-none md:h-[100dvh] shadow-2xl flex flex-col relative z-10 animate-in slide-in-from-bottom-8 md:slide-in-from-right-8 duration-300 rounded-t-[2rem] md:rounded-t-none md:rounded-l-[2rem] overflow-hidden">
+      <div
+        onKeyDown={handleDrawerKeyDown}
+        className="w-full md:w-[460px] bg-zinc-50 max-h-[92dvh] md:max-h-none md:h-[100dvh] shadow-2xl flex flex-col relative z-10 animate-in slide-in-from-bottom-8 md:slide-in-from-right-8 duration-300 rounded-t-[2rem] md:rounded-t-none md:rounded-l-[2rem] overflow-hidden"
+      >
         <div className="flex-shrink-0 px-5 py-4 bg-white border-b border-zinc-200/60 flex items-center gap-3 pt-[calc(1rem+env(safe-area-inset-top))]">
           <div className="relative w-10 h-10 rounded-full bg-amber-100 text-amber-600 shadow-inner flex items-center justify-center flex-shrink-0">
             <SquareStack className="w-5 h-5" strokeWidth={2.5} />
@@ -155,13 +188,14 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 <p className="text-xs font-semibold text-zinc-500 mt-2">Ejemplo: ARG10</p>
               </div>
 
-              <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-4">
+              <form onSubmit={handleFormSubmit} className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-4">
                 <div className="grid grid-cols-[1fr_112px] gap-3">
                   <label className="space-y-1.5">
                     <span className="text-xs font-black uppercase tracking-wider text-zinc-500">Código</span>
                     <input
                       ref={prefixInputRef}
                       value={prefix}
+                      onFocus={handlePrefixFocus}
                       onChange={e => handlePrefixChange(e.target.value)}
                       onPaste={e => {
                         const text = e.clipboardData.getData('text')
@@ -194,8 +228,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                     />
                   </label>
                 </div>
-
-              </div>
+              </form>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-sm font-semibold text-red-700">
@@ -288,7 +321,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
             </div>
           )}
           {flow === 'success' && (
-            <button
+              <button
               onClick={() => resetForm(true)}
               className="w-full bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
             >

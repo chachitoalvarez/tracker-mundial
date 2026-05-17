@@ -46,27 +46,29 @@ export function DetalleView({
         action={<CodeEntryCard onOpen={() => setIsScanOpen(true)} />}
       />
 
-      <div className="space-y-8 sm:space-y-10 lg:mt-1">
-        {selectedSection === 'all'
-          ? albumData.map(section => (
-              <StickerGrid
-                key={section.section}
-                sectionData={section}
-                detailFilter={detailFilter}
-                stickerSearchTerm={stickerSearchTerm}
-                onUpdateCount={onUpdateCount}
-              />
-            ))
-          : currentSectionData && (
-              <StickerGrid
-                sectionData={currentSectionData}
-                detailFilter={detailFilter}
-                stickerSearchTerm={stickerSearchTerm}
-                onUpdateCount={onUpdateCount}
-              />
-            )
-        }
-      </div>
+      {!isScanOpen && (
+        <div className="space-y-8 sm:space-y-10 lg:mt-1">
+          {selectedSection === 'all'
+            ? albumData.map(section => (
+                <StickerGrid
+                  key={section.section}
+                  sectionData={section}
+                  detailFilter={detailFilter}
+                  stickerSearchTerm={stickerSearchTerm}
+                  onUpdateCount={onUpdateCount}
+                />
+              ))
+            : currentSectionData && (
+                <StickerGrid
+                  sectionData={currentSectionData}
+                  detailFilter={detailFilter}
+                  stickerSearchTerm={stickerSearchTerm}
+                  onUpdateCount={onUpdateCount}
+                />
+              )
+          }
+        </div>
+      )}
 
       {isScanOpen && (
         <CodeEntryDrawer
