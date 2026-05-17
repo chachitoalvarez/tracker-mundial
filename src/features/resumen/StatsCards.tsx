@@ -53,8 +53,8 @@ export function StatsCards({ stats, unlockedAchievementsCount, totalAchievements
         icon={<Package className="h-6 w-6 lg:h-5 lg:w-5" strokeWidth={2.5} />}
         iconClassName="bg-emerald-50 text-emerald-600 border-emerald-100"
         label="Pegadas"
-        value={`${stats.totalCompleted}/${stats.totalNeeded}`}
-        ariaLabel={`Figuritas pegadas: ${stats.totalCompleted} de ${stats.totalNeeded}`}
+        value={stats.totalCompleted}
+        ariaLabel={`Figuritas pegadas: ${stats.totalCompleted}`}
       />
 
       <MetricCard

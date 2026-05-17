@@ -144,6 +144,11 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const handleDrawerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'Enter') return
 
+    if (flow === 'form') {
+      e.preventDefault()
+      searchSticker()
+    }
+
     if (flow === 'review') {
       e.preventDefault()
       confirm()
