@@ -20,6 +20,10 @@ interface Props {
     items: Array<{ sticker: Sticker; quantity: number }>,
     options?: { celebrate?: boolean },
   ) => void
+  onDiscountStickers: (
+    items: Array<{ sticker: Sticker; quantity: number }>,
+    options?: { celebrate?: boolean },
+  ) => void
   onJumpToStickerCode: (query: string) => boolean
 }
 
@@ -27,9 +31,10 @@ export function DetalleView({
   albumData, selectedSection, setSelectedSection,
   stickerSearchTerm, setStickerSearchTerm,
   detailFilter, setDetailFilter,
-  currentSectionData, stats, onUpdateCount, onAddScannedStickers, onJumpToStickerCode,
+  currentSectionData, stats, onUpdateCount, onAddScannedStickers, onDiscountStickers, onJumpToStickerCode,
 }: Props) {
   const [isScanOpen, setIsScanOpen] = useState(false)
+  const [entryMode, setEntryMode] = useState<'add' | 'subtract'>('add')
 
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 relative">
@@ -43,7 +48,10 @@ export function DetalleView({
         detailFilter={detailFilter}
         setDetailFilter={setDetailFilter}
         stats={stats}
-        action={<CodeEntryCard onOpen={() => setIsScanOpen(true)} />}
+        action={<CodeEntryCard onSelectMode={(mode) => {
+          setEntryMode(mode)
+          setIsScanOpen(true)
+        }} />}
       />
 
       {!isScanOpen && (
@@ -73,9 +81,11 @@ export function DetalleView({
       {isScanOpen && (
         <CodeEntryDrawer
           isOpen
+          mode={entryMode}
           albumData={albumData}
           onClose={() => setIsScanOpen(false)}
           onConfirm={items => onAddScannedStickers(items, { celebrate: false })}
+          onDiscount={items => onDiscountStickers(items, { celebrate: false })}
         />
       )}
     </div>

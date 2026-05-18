@@ -108,6 +108,45 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     })
   }
 
+  const discountStickers = (
+    items: Array<{ sticker: Sticker; quantity: number }>,
+    options: { celebrate?: boolean } = {},
+  ) => {
+    const validItems = items.filter(item => item.quantity > 0)
+    if (!validItems.length) return
+
+    setAlbumData(prev => {
+      const discountsBySection = validItems.reduce<Record<string, Record<string, number>>>((acc, item) => {
+        const section = item.sticker.subseccion
+        acc[section] = {
+          ...(acc[section] ?? {}),
+          [item.sticker.codigoFigura]: (acc[section]?.[item.sticker.codigoFigura] ?? 0) + item.quantity,
+        }
+        return acc
+      }, {})
+
+      const next = prev.map(section => {
+        const discounts = discountsBySection[section.section]
+        if (!discounts) return section
+
+        const collected = { ...section.collected }
+        for (const [code, quantity] of Object.entries(discounts)) {
+          const nextCount = Math.max(0, (collected[code] ?? 0) - quantity)
+          if (nextCount === 0) delete collected[code]
+          else collected[code] = nextCount
+        }
+        return { ...section, collected }
+      })
+
+      if (options.celebrate !== false) {
+        triggerCelebration('sticker', 'Figuritas descontadas!\nActualizamos tu álbum', 'check')
+      }
+
+      scheduleSync(next)
+      return next
+    })
+  }
+
   const handleGoToDetail = (sectionName: string, setActiveTab: (tab: Tab) => void) => {
     setSelectedSection(sectionName)
     setStickerSearchTerm('')
@@ -138,6 +177,7 @@ export function useAlbum(triggerCelebration: (type: 'sticker' | 'achievement' | 
     setDetailFilter,
     updateStickerCount,
     addScannedStickers,
+    discountStickers,
     handleGoToDetail,
     jumpToStickerCode,
   }

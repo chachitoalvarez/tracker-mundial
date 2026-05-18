@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Check, Pencil, Plus, SquareStack, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Check, Minus, Pencil, Plus, SquareStack, Trash2, X } from 'lucide-react'
 import { getDisplayStickerCode, parseStickerCode, validateStickerCode } from '@/lib/stickerCode'
 import { formatStickerDisplayId } from '@/lib/album'
 import type { AlbumSection, Sticker } from '@/types/album'
 
 interface Props {
   isOpen: boolean
+  mode: 'add' | 'subtract'
   albumData: AlbumSection[]
   onClose: () => void
   onConfirm: (items: Array<{ sticker: Sticker; quantity: number }>) => void
+  onDiscount: (items: Array<{ sticker: Sticker; quantity: number }>) => void
 }
 
 type FlowState = 'form' | 'review' | 'success'
@@ -20,7 +22,7 @@ interface PendingSticker {
 }
 
 interface PendingStickerView extends PendingSticker {
-  status: 'Nueva' | 'Repetida'
+  status: 'Nueva' | 'Repetida' | 'Se descuenta de repetidas'
 }
 
 interface BatchSummary {
@@ -38,14 +40,18 @@ function getStatusLabel(currentCount: number) {
   return currentCount <= 0 ? 'Nueva' : 'Repetida'
 }
 
+function getDiscountStatusLabel() {
+  return 'Se descuenta de repetidas' as const
+}
+
 function getValidationError(status: ReturnType<typeof validateStickerCode>['status'] | undefined) {
   if (status === 'prefix_invalid') {
-    return 'No encontramos ese codigo. Revisa las letras del codigo o elegi una opcion valida.'
+    return 'No encontramos ese código. Revisá las letras del código o elegí una opción válida.'
   }
   if (status === 'number_invalid') {
-    return 'No encontramos esa figurita. Ese numero no existe para este codigo.'
+    return 'No encontramos esa figurita. Ese número no existe para este código.'
   }
-  return 'No encontramos esta figurita. Revisa que el codigo este bien escrito. Ejemplo: ARG10.'
+  return 'No encontramos esta figurita. Revisá que el código esté bien escrito. Ejemplo: ARG10.'
 }
 
 function aggregatePendingItems(items: PendingSticker[]) {
@@ -60,7 +66,7 @@ function aggregatePendingItems(items: PendingSticker[]) {
   return [...grouped.values()]
 }
 
-export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props) {
+export function CodeEntryDrawer({ isOpen, mode, albumData, onClose, onConfirm, onDiscount }: Props) {
   const [flow, setFlow] = useState<FlowState>('form')
   const [prefix, setPrefix] = useState('')
   const [number, setNumber] = useState('')
@@ -111,17 +117,24 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
       .sort((a, b) => a.updatedAt - b.updatedAt)
       .map(item => {
         const code = item.sticker.codigoFigura
-        const priorCount = getCurrentCount(albumData, item.sticker) + (seenCounts.get(code) ?? 0)
-        seenCounts.set(code, (seenCounts.get(code) ?? 0) + 1)
+        const seen = seenCounts.get(code) ?? 0
+        const currentCountForSticker = getCurrentCount(albumData, item.sticker)
+        seenCounts.set(code, seen + 1)
+
+        if (mode === 'subtract') {
+          return { ...item, status: getDiscountStatusLabel() }
+        }
+
+        const priorCount = currentCountForSticker + seen
         return { ...item, status: priorCount > 0 ? 'Repetida' as const : 'Nueva' as const }
       })
       .sort((a, b) => b.updatedAt - a.updatedAt)
-  }, [albumData, pendingItems])
+  }, [albumData, mode, pendingItems])
 
   const batchSummary = useMemo<BatchSummary>(() => ({
     total: pendingViews.length,
     newCount: pendingViews.filter(item => item.status === 'Nueva').length,
-    repeatedCount: pendingViews.filter(item => item.status === 'Repetida').length,
+    repeatedCount: pendingViews.filter(item => item.status === 'Repetida' || item.status === 'Se descuenta de repetidas').length,
   }), [pendingViews])
 
   if (!isOpen) return null
@@ -180,7 +193,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
 
   const getValidatedSticker = () => {
     if (!canSearch) {
-      setError('Completa el codigo y el numero.')
+      setError('Completá el código y el número.')
       return null
     }
     if (validation?.status !== 'valid' || !validation.sticker) {
@@ -193,8 +206,13 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const searchSticker = () => {
     const sticker = getValidatedSticker()
     if (!sticker) return
+    const count = getCurrentCount(albumData, sticker)
+    if (mode === 'subtract' && count <= 1) {
+      setError('No tenés esta figurita. Revisá el código o elegí otra.')
+      return
+    }
     setSelectedSticker(sticker)
-    setCurrentCount(getCurrentCount(albumData, sticker))
+    setCurrentCount(count)
     setLastPrefix(validation?.prefix ?? prefix)
     setFlow('review')
     setError(null)
@@ -203,6 +221,16 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const addOrUpdatePendingSticker = () => {
     const sticker = getValidatedSticker()
     if (!sticker) return
+    if (mode === 'subtract') {
+      const sameCodeCount = pendingItems.filter(item =>
+        item.id !== editingId && item.sticker.codigoFigura === sticker.codigoFigura
+      ).length
+      const availableCount = getCurrentCount(albumData, sticker) - sameCodeCount
+      if (availableCount <= 1) {
+        setError('No tenés esta figurita. Revisá el código o elegí otra.')
+        return
+      }
+    }
     const timestamp = Date.now()
     const nextPrefix = validation?.prefix ?? prefix
     setLastPrefix(nextPrefix)
@@ -232,7 +260,8 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
   const saveBatch = () => {
     if (!pendingItems.length) return
     setLastBatchSummary(batchSummary)
-    onConfirm(aggregatePendingItems(pendingItems))
+    if (mode === 'subtract') onDiscount(aggregatePendingItems(pendingItems))
+    else onConfirm(aggregatePendingItems(pendingItems))
     setPendingItems([])
     setEditingId(null)
     setFlow('success')
@@ -240,8 +269,17 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
 
   const confirmSingle = () => {
     if (!selectedSticker) return
-    setSavedWasRepeated(currentCount > 0)
-    onConfirm([{ sticker: selectedSticker, quantity: 1 }])
+    if (mode === 'subtract') {
+      if (currentCount <= 1) {
+        setError('No tenés esta figurita. Revisá el código o elegí otra.')
+        setFlow('form')
+        return
+      }
+      onDiscount([{ sticker: selectedSticker, quantity: 1 }])
+    } else {
+      setSavedWasRepeated(currentCount > 0)
+      onConfirm([{ sticker: selectedSticker, quantity: 1 }])
+    }
     setFlow('success')
   }
 
@@ -278,12 +316,15 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
         <div className="flex-shrink-0 px-5 py-4 bg-white border-b border-zinc-200/60 flex items-center gap-3 pt-[calc(1rem+env(safe-area-inset-top))]">
           <div className="relative w-10 h-10 rounded-full bg-amber-100 text-amber-600 shadow-inner flex items-center justify-center flex-shrink-0">
             <SquareStack className="w-5 h-5" strokeWidth={2.5} />
-            <Plus className="w-3.5 h-3.5 absolute -bottom-0.5 -right-0.5 bg-amber-100 rounded-full p-0.5" strokeWidth={3} />
+            {mode === 'subtract'
+              ? <Minus className="w-3.5 h-3.5 absolute -bottom-0.5 -right-0.5 bg-amber-100 rounded-full p-0.5" strokeWidth={3} />
+              : <Plus className="w-3.5 h-3.5 absolute -bottom-0.5 -right-0.5 bg-amber-100 rounded-full p-0.5" strokeWidth={3} />
+            }
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-black text-zinc-900 tracking-tight truncate">
-              <span className="md:hidden">Cargar figurita</span>
-              <span className="hidden md:inline">Cargar figuritas</span>
+              <span className="md:hidden">{mode === 'subtract' ? 'Descontar figurita' : 'Agregar figurita'}</span>
+              <span className="hidden md:inline">{mode === 'subtract' ? 'Descontar figuritas' : 'Agregar figuritas'}</span>
             </p>
           </div>
           <button onClick={onClose} className="w-9 h-9 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors active:scale-90 flex-shrink-0">
@@ -296,11 +337,11 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
             <div className={isDesktop ? 'p-5 space-y-4' : 'p-5 space-y-5'}>
               <div>
                 <h2 className={isDesktop ? 'text-lg font-black text-zinc-900 tracking-tight' : 'text-2xl font-black text-zinc-900 tracking-tight'}>
-                  <span className="md:hidden">Ingresá el código</span>
-                  <span className="hidden md:inline">Ingresá los códigos</span>
+                  <span className="md:hidden">{mode === 'subtract' ? 'Ingresá el código entregado' : 'Ingresá el código'}</span>
+                  <span className="hidden md:inline">{mode === 'subtract' ? 'Ingresá los códigos entregados' : 'Ingresá los códigos'}</span>
                 </h2>
                 <p className="md:hidden text-sm text-zinc-500 font-medium mt-2 leading-relaxed">
-                  Estan en el dorso, arriba a la derecha.
+                  Está en el dorso, arriba a la derecha.
                 </p>
                 <p className="md:hidden text-xs font-semibold text-zinc-500 mt-2">Ejemplo: ARG10</p>
               </div>
@@ -368,10 +409,10 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
               {isDesktop && (
                 <>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-black text-zinc-900">Figuritas por guardar</h3>
+                    <h3 className="text-sm font-black text-zinc-900">{mode === 'subtract' ? 'Figuritas por descontar' : 'Figuritas por guardar'}</h3>
                     {editingId !== null && (
                       <button type="button" onClick={cancelEditing} className="text-xs font-bold text-zinc-500 hover:text-zinc-900">
-                        Cancelar edicion
+                      Cancelar edición
                       </button>
                     )}
                   </div>
@@ -386,7 +427,7 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                               {item.sticker.nombreFigura || 'Figurita'} · {item.sticker.paisEquipo || item.sticker.subseccion}
                             </p>
                             <span className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
-                              item.status === 'Nueva' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                              item.status === 'Nueva' ? 'bg-emerald-100 text-emerald-700' : item.status === 'Repetida' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700'
                             }`}>
                               {item.status}
                             </span>
@@ -414,7 +455,16 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
 
           {!isDesktop && flow === 'review' && selectedSticker && (
             <div className="p-5 space-y-4">
-              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Revisa antes de guardar</h2>
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tight">
+                  {mode === 'subtract' ? 'Revisá antes de descontar' : 'Revisá antes de guardar'}
+                </h2>
+                {mode === 'subtract' && (
+                  <p className="mt-2 text-sm font-medium text-zinc-500">
+                    Se va a descontar de tus repetidas.
+                  </p>
+                )}
+              </div>
               <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -426,13 +476,13 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                     </p>
                   </div>
                   <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
-                    currentCount <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    mode === 'add' && currentCount <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {getStatusLabel(currentCount)}
+                    {mode === 'subtract' ? 'Repetida' : getStatusLabel(currentCount)}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-zinc-900">
-                  Codigo: <span className="text-amber-600">{formatStickerDisplayId(selectedSticker.codigoFigura)}</span>
+                  Código: <span className="text-amber-600">{formatStickerDisplayId(selectedSticker.codigoFigura)}</span>
                 </div>
               </div>
             </div>
@@ -445,21 +495,30 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
               </div>
               {isDesktop && lastBatchSummary ? (
                 <>
-                  <h2 className="text-xl font-black text-zinc-900">Figuritas guardadas</h2>
+                  <h2 className="text-xl font-black text-zinc-900">{mode === 'subtract' ? 'Figuritas descontadas' : 'Figuritas guardadas'}</h2>
                   <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">
-                    Guardamos {lastBatchSummary.total} {lastBatchSummary.total === 1 ? 'figurita' : 'figuritas'} en tu album.
+                    {mode === 'subtract'
+                      ? 'Actualizamos tu álbum.'
+                      : `Guardamos ${lastBatchSummary.total} ${lastBatchSummary.total === 1 ? 'figurita' : 'figuritas'} en tu álbum.`
+                    }
                   </p>
                   <p className="text-sm font-bold text-zinc-700 mt-2">
-                    {lastBatchSummary.newCount} {lastBatchSummary.newCount === 1 ? 'nueva' : 'nuevas'} · {lastBatchSummary.repeatedCount} {lastBatchSummary.repeatedCount === 1 ? 'repetida' : 'repetidas'}
+                    {mode === 'subtract'
+                      ? `${lastBatchSummary.repeatedCount} ${lastBatchSummary.repeatedCount === 1 ? 'repetida descontada' : 'repetidas descontadas'}`
+                      : `${lastBatchSummary.newCount} ${lastBatchSummary.newCount === 1 ? 'nueva' : 'nuevas'} · ${lastBatchSummary.repeatedCount} ${lastBatchSummary.repeatedCount === 1 ? 'repetida' : 'repetidas'}`
+                    }
                   </p>
                 </>
               ) : (
                 <>
                   <h2 className="text-xl font-black text-zinc-900">
-                    {savedWasRepeated ? 'Repetida guardada' : 'Figurita guardada'}
+                    {mode === 'subtract' ? 'Figurita descontada' : savedWasRepeated ? 'Repetida guardada' : 'Figurita guardada'}
                   </h2>
                   <p className="text-sm font-medium text-zinc-500 mt-2 max-w-[320px]">
-                    {savedWasRepeated ? 'La sumamos a tus repetidas para futuros canjes.' : 'La sumamos a tu album.'}
+                    {mode === 'subtract'
+                      ? 'La restamos de tus repetidas.'
+                      : savedWasRepeated ? 'La sumamos a tus repetidas.' : 'La sumamos a tu álbum.'
+                    }
                   </p>
                 </>
               )}
@@ -483,10 +542,16 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 <div>
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-xs font-semibold text-zinc-500">
-                      {batchSummary.newCount} {batchSummary.newCount === 1 ? 'nueva' : 'nuevas'} · {batchSummary.repeatedCount} {batchSummary.repeatedCount === 1 ? 'repetida' : 'repetidas'}
+                      {mode === 'subtract'
+                        ? `${batchSummary.repeatedCount} ${batchSummary.repeatedCount === 1 ? 'repetida' : 'repetidas'}`
+                        : `${batchSummary.newCount} ${batchSummary.newCount === 1 ? 'nueva' : 'nuevas'} · ${batchSummary.repeatedCount} ${batchSummary.repeatedCount === 1 ? 'repetida' : 'repetidas'}`
+                      }
                     </p>
                     <button onClick={saveBatch} className="bg-amber-500 text-white font-bold py-3 px-4 rounded-2xl hover:bg-amber-600 transition-all">
-                      {batchSummary.total === 1 ? 'Guardar figurita' : `Guardar ${batchSummary.total} figuritas`}
+                      {mode === 'subtract'
+                        ? batchSummary.total === 1 ? 'Descontar figurita' : `Descontar ${batchSummary.total} figuritas`
+                        : batchSummary.total === 1 ? 'Guardar figurita' : `Guardar ${batchSummary.total} figuritas`
+                      }
                     </button>
                   </div>
                 </div>
@@ -506,14 +571,14 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-5 h-5" strokeWidth={2.5} />
-                Editar codigo
+                Editar código
               </button>
               <button
                 onClick={confirmSingle}
                 ref={saveButtonRef}
                 className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
               >
-                Guardar figurita
+                {mode === 'subtract' ? 'Descontar figurita' : 'Guardar figurita'}
               </button>
             </div>
           )}
@@ -524,7 +589,10 @@ export function CodeEntryDrawer({ isOpen, albumData, onClose, onConfirm }: Props
                 ref={loadAnotherButtonRef}
                 className="flex-1 bg-zinc-900 text-white font-bold py-3 px-3 rounded-2xl hover:bg-zinc-800 transition-all"
               >
-                {isDesktop ? 'Cargar mas figuritas' : 'Cargar otra figurita'}
+                {mode === 'subtract'
+                  ? isDesktop ? 'Descontar más' : 'Descontar otra figurita'
+                  : isDesktop ? 'Cargar más' : 'Cargar otra figurita'
+                }
               </button>
               {isDesktop && (
                 <button onClick={onClose} className="flex-1 bg-white border-2 border-zinc-200 text-zinc-700 font-bold py-3 px-3 rounded-2xl hover:bg-zinc-50 transition-all">
