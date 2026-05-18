@@ -6,6 +6,8 @@ export const AVATARS = [
   { key: 'pelota', fileName: 'pelota.webp', label: 'Pelota' },
   { key: 'estadio', fileName: 'estadio.webp', label: 'Estadio' },
   { key: 'camiseta10', fileName: 'camiseta10.webp', label: 'Camiseta 10' },
+  { key: 'messi', fileName: 'messi.webp', label: 'Messi' },
+  { key: 'maradona', fileName: 'maradona.webp', label: 'Maradona' },
 ] as const
 
 export type AvatarKey = typeof AVATARS[number]['key']
