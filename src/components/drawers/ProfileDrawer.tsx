@@ -11,6 +11,8 @@ interface Props {
   onClose: () => void
   userName: string
   setUserName: (v: string) => void
+  avatarKey: string | null
+  onAvatarChange: (avatarKey: string | null) => void
   authEmail: string
   stats: AlbumStats
   unlockedAchievementsCount: number
@@ -20,20 +22,18 @@ interface Props {
 }
 
 export function ProfileDrawer({
-  isOpen, onClose, userName, setUserName, authEmail,
+  isOpen, onClose, userName, setUserName, avatarKey, onAvatarChange, authEmail,
   stats, unlockedAchievementsCount, connectionsCount, groupsCount, onLogout,
 }: Props) {
   const [isPublicProfile, setIsPublicProfile] = useState(true)
-  const [avatarKey, setAvatarKey] = useState<string | null>(null)
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
   const [avatarFeedback, setAvatarFeedback] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
-    profilesService.getProfileSettings().then(({ isPublic, avatarKey: nextAvatarKey }) => {
+    profilesService.getProfileSettings().then(({ isPublic }) => {
       setIsPublicProfile(isPublic)
-      setAvatarKey(nextAvatarKey)
     })
     setIsAvatarPickerOpen(false)
   }, [isOpen])
@@ -61,7 +61,7 @@ export function ProfileDrawer({
 
   const handleAvatarChange = async (nextAvatarKey: AvatarKey) => {
     const previousAvatarKey = avatarKey
-    setAvatarKey(nextAvatarKey)
+    onAvatarChange(nextAvatarKey)
     const { error } = await profilesService.updateAvatarKey(nextAvatarKey)
     if (!error) {
       setAvatarFeedback('Avatar actualizado')
@@ -69,7 +69,7 @@ export function ProfileDrawer({
       setTimeout(() => setAvatarFeedback(null), 2000)
       return
     }
-    setAvatarKey(previousAvatarKey)
+    onAvatarChange(previousAvatarKey)
     setAvatarFeedback('No pudimos actualizar el avatar. Probá de nuevo.')
     setTimeout(() => setAvatarFeedback(null), 2500)
   }

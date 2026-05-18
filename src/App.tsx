@@ -24,6 +24,7 @@ import { CelebrationOverlay } from '@/components/overlays/CelebrationOverlay'
 import { ProfileDrawer } from '@/components/drawers/ProfileDrawer'
 import { PublicProfileDrawer } from '@/components/drawers/PublicProfileDrawer'
 import { ChatDrawer } from '@/components/drawers/ChatDrawer'
+import * as profilesService from '@/services/profiles.service'
 
 import type { Tab } from '@/lib/constants'
 
@@ -57,6 +58,18 @@ function AppShell() {
     [sessionUserId],
   )
   const [seenAchievementsCount, setSeenAchievementsCount] = useState(0)
+  const [avatarKey, setAvatarKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAvatarKey(null)
+      return
+    }
+
+    profilesService.getProfileSettings().then(({ avatarKey: nextAvatarKey }) => {
+      setAvatarKey(nextAvatarKey)
+    })
+  }, [isAuthenticated])
 
   const {
     likedByMe, likedByThem, connections, showMatchAnimation,
@@ -143,6 +156,7 @@ function AppShell() {
         <ContextualHeader
           activeTab={activeTab}
           userName={userName}
+          avatarKey={avatarKey}
           notificationsCount={logrosBadge}
           onProfileOpen={() => setIsProfileOpen(true)}
         />
@@ -253,6 +267,8 @@ function AppShell() {
         onClose={() => setIsProfileOpen(false)}
         userName={userName}
         setUserName={setUserName}
+        avatarKey={avatarKey}
+        onAvatarChange={setAvatarKey}
         authEmail={sessionEmail || authEmail}
         stats={stats}
         unlockedAchievementsCount={unlockedCount}

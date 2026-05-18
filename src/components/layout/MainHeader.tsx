@@ -1,12 +1,14 @@
-import { Trophy, User } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { APP_NAME } from '@/lib/constants'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 interface Props {
   userName: string
+  avatarKey?: string | null
   onProfileOpen: () => void
 }
 
-export function MainHeader({ userName, onProfileOpen }: Props) {
+export function MainHeader({ userName, avatarKey, onProfileOpen }: Props) {
   return (
     <header className="bg-white rounded-3xl px-4 sm:px-6 py-5 sm:py-6 shadow-sm border border-zinc-200/60 flex items-center justify-between gap-4 transition-all duration-300 animate-in fade-in slide-in-from-top-4 relative overflow-hidden">
       <div className="absolute right-0 top-0 w-64 h-64 bg-amber-50 rounded-full blur-[80px] -z-10 pointer-events-none" />
@@ -26,8 +28,13 @@ export function MainHeader({ userName, onProfileOpen }: Props) {
         <div className="flex flex-col items-end text-right hidden sm:flex">
           <p className="text-sm font-bold text-zinc-900 group-hover:text-amber-600 transition-colors leading-tight">@{userName}</p>
         </div>
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-white shadow-md flex items-center justify-center flex-shrink-0">
-          <User className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+        <div className="flex-shrink-0 rounded-full border-2 border-white shadow-md">
+          <UserAvatar
+            avatarKey={avatarKey}
+            className="h-10 w-10 sm:h-12 sm:w-12"
+            iconClassName="h-5 w-5 sm:h-6 sm:w-6"
+            fallbackClassName="bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600"
+          />
         </div>
       </button>
     </header>

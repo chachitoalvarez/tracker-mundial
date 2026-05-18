@@ -1,5 +1,6 @@
-import { ListChecks, CheckCircle2, Users, RefreshCcw, Award, User } from 'lucide-react'
+import { ListChecks, CheckCircle2, Users, RefreshCcw, Award } from 'lucide-react'
 import type { Tab } from '@/lib/constants'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 const TAB_META: Record<Tab, { icon: React.ReactNode; label: string }> = {
   resumen: { icon: <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />, label: 'Resumen de progreso' },
@@ -12,11 +13,12 @@ const TAB_META: Record<Tab, { icon: React.ReactNode; label: string }> = {
 interface Props {
   activeTab: Tab
   userName: string
+  avatarKey?: string | null
   notificationsCount: number
   onProfileOpen: () => void
 }
 
-export function ContextualHeader({ activeTab, userName, notificationsCount, onProfileOpen }: Props) {
+export function ContextualHeader({ activeTab, userName, avatarKey, notificationsCount, onProfileOpen }: Props) {
   const meta = TAB_META[activeTab]
 
   return (
@@ -34,8 +36,13 @@ export function ContextualHeader({ activeTab, userName, notificationsCount, onPr
         <div className="flex flex-col items-end text-right hidden sm:flex">
           <p className="text-sm lg:text-[13px] font-bold text-zinc-900 group-hover:text-amber-600 transition-colors leading-tight">@{userName}</p>
         </div>
-        <div className="w-10 h-10 lg:w-9 lg:h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-white shadow-md flex items-center justify-center flex-shrink-0 relative">
-          <User className="w-5 h-5 lg:w-4 lg:h-4 sm:w-6 sm:h-6 text-amber-600" />
+        <div className="relative flex-shrink-0 rounded-full border-2 border-white shadow-md">
+          <UserAvatar
+            avatarKey={avatarKey}
+            className="h-10 w-10 lg:h-9 lg:w-9 sm:h-12 sm:w-12"
+            iconClassName="h-5 w-5 lg:h-4 lg:w-4 sm:h-6 sm:w-6"
+            fallbackClassName="bg-gradient-to-br from-amber-100 to-amber-50 text-amber-600"
+          />
           {notificationsCount > 0 && (
             <div className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
               {notificationsCount}
