@@ -285,7 +285,16 @@ function AppShell() {
       {selectedPublicUser && (
         <PublicProfileDrawer
           user={selectedPublicUser}
+          albumData={albumData}
           onClose={() => setSelectedPublicUser(null)}
+          onRegisterTrade={(received, delivered) => {
+            addScannedStickers(received, { celebrate: false })
+            discountStickers(delivered, { celebrate: false })
+          }}
+          onViewSummary={() => {
+            setActiveTab('resumen')
+            setSelectedPublicUser(null)
+          }}
           onStartChat={(otherUserId, otherUsername, prefill) => {
             openChatWithUser(otherUserId, otherUsername, prefill)
           }}
