@@ -9,6 +9,7 @@ import { ChatProvider, useChat } from '@/contexts/ChatContext'
 import { useGroups } from '@/hooks/useGroups'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { LEGACY_PROJECT_SLUG, PROJECT_SLUG } from '@/lib/constants'
+import { getStickerByCanonicalCode } from '@/lib/album'
 
 import { LoginView } from '@/views/LoginView'
 import { ResumenView } from '@/views/ResumenView'
@@ -25,8 +26,11 @@ import { ProfileDrawer } from '@/components/drawers/ProfileDrawer'
 import { PublicProfileDrawer } from '@/components/drawers/PublicProfileDrawer'
 import { ChatDrawer } from '@/components/drawers/ChatDrawer'
 import * as profilesService from '@/services/profiles.service'
+import * as tradeProposalsService from '@/services/tradeProposals.service'
 
 import type { Tab } from '@/lib/constants'
+import type { Sticker } from '@/types/album'
+import type { TradeProposal, TradeProposalSticker } from '@/types/trade'
 
 
 function AppShell() {
@@ -59,6 +63,7 @@ function AppShell() {
   )
   const [seenAchievementsCount, setSeenAchievementsCount] = useState(0)
   const [avatarKey, setAvatarKey] = useState<string | null>(null)
+  const [tradeProposals, setTradeProposals] = useState<TradeProposal[]>([])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -79,9 +84,22 @@ function AppShell() {
 
   const { openChatWithUser, closeChat } = useChat()
 
+  const refreshTradeProposals = async () => {
+    const { data } = await tradeProposalsService.listTradeProposals()
+    setTradeProposals(data)
+  }
+
   useEffect(() => {
     if (isAuthenticated) closeChat()
   }, [isAuthenticated, closeChat])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setTradeProposals([])
+      return
+    }
+    refreshTradeProposals()
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!seenAchievementsKey) {
@@ -130,10 +148,53 @@ function AppShell() {
   if (!authInitialized) return <div className="min-h-screen bg-zinc-50 flex items-center justify-center"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>
   if (!isAuthenticated) return <LoginView />
 
-  const intercambiosBadge = likedByThem.length + unreadConnectionsCount
+  const receivedTradeProposals = tradeProposals.filter(item => item.direction === 'received')
+  const sentTradeProposals = tradeProposals.filter(item => item.direction === 'sent')
+  const pendingReceivedTradeProposals = receivedTradeProposals.filter(item => item.status === 'pending').length
+  const intercambiosBadge = likedByThem.length + unreadConnectionsCount + pendingReceivedTradeProposals
   const logrosBadge = Math.max(unlockedCount - seenAchievementsCount, 0)
   const setTab = (tab: Tab) => setActiveTab(tab)
   const goToDetail = (section: string) => handleGoToDetail(section, setTab)
+  const proposalItemsToAlbumItems = (items: TradeProposalSticker[]): Array<{ sticker: Sticker; quantity: number }> => {
+    return items
+      .map(item => {
+        const sticker = getStickerByCanonicalCode(item.normalizedCode)
+        return sticker ? { sticker, quantity: item.quantity || 1 } : null
+      })
+      .filter((item): item is { sticker: Sticker; quantity: number } => item !== null)
+  }
+
+  const handleCreateTradeProposal = async (
+    targetUserId: string,
+    creatorWillReceive: TradeProposalSticker[],
+    creatorWillGive: TradeProposalSticker[],
+  ) => {
+    const result = await tradeProposalsService.createTradeProposal(targetUserId, creatorWillReceive, creatorWillGive)
+    await refreshTradeProposals()
+    return { error: result.error }
+  }
+
+  const handleAcceptTradeProposal = async (proposal: TradeProposal) => {
+    const { error } = await tradeProposalsService.acceptTradeProposal(proposal.id)
+    if (error) {
+      window.alert('El canje cambió. Algunas figuritas ya no están disponibles. Revisá la propuesta antes de confirmar.')
+      await refreshTradeProposals()
+      return
+    }
+    addScannedStickers(proposalItemsToAlbumItems(proposal.creatorWillGive), { celebrate: false })
+    discountStickers(proposalItemsToAlbumItems(proposal.creatorWillReceive), { celebrate: false })
+    await refreshTradeProposals()
+  }
+
+  const handleRejectTradeProposal = async (proposal: TradeProposal) => {
+    await tradeProposalsService.rejectTradeProposal(proposal.id)
+    await refreshTradeProposals()
+  }
+
+  const handleCancelTradeProposal = async (proposal: TradeProposal) => {
+    await tradeProposalsService.cancelTradeProposal(proposal.id)
+    await refreshTradeProposals()
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50/50 p-3 sm:p-4 lg:p-6 font-sans text-zinc-800 overflow-x-hidden pb-24 md:pb-8 relative">
@@ -244,11 +305,16 @@ function AppShell() {
                   connections={connections}
                   likedByMe={likedByMe}
                   likedByThem={likedByThem}
+                  sentProposals={sentTradeProposals}
+                  receivedProposals={receivedTradeProposals}
                   unreadConnectionsCount={unreadConnectionsCount}
                   onSwipe={handleSwipe}
                   onOpenChat={(conn) => openChatWithUser(String(conn.id), conn.name)}
                   onAcceptLike={handleAcceptLike}
                   onRejectLike={handleRejectLike}
+                  onAcceptProposal={handleAcceptTradeProposal}
+                  onRejectProposal={handleRejectTradeProposal}
+                  onCancelProposal={handleCancelTradeProposal}
                 />
               )}
 
@@ -287,10 +353,7 @@ function AppShell() {
           user={selectedPublicUser}
           albumData={albumData}
           onClose={() => setSelectedPublicUser(null)}
-          onRegisterTrade={(received, delivered) => {
-            addScannedStickers(received, { celebrate: false })
-            discountStickers(delivered, { celebrate: false })
-          }}
+          onCreateTradeProposal={handleCreateTradeProposal}
           onViewSummary={() => {
             setActiveTab('resumen')
             setSelectedPublicUser(null)

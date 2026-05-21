@@ -35,8 +35,8 @@ export function DetalleFiltersBar({
 
   return (
     <div className="w-full bg-zinc-50/80 sm:bg-white/80 backdrop-blur-xl py-3 lg:py-2.5 px-3 sm:px-4 lg:px-0 mb-4 lg:mb-5 sm:border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] sm:rounded-3xl transition-all">
-      <div className="flex flex-col lg:flex-row lg:flex-nowrap gap-3 lg:gap-2 xl:gap-3 items-stretch lg:items-center justify-between w-full min-h-[72px]">
-        <div className="w-full lg:w-auto flex items-center shrink-0">
+      <div className="flex flex-col lg:flex-row lg:flex-wrap xl:flex-nowrap gap-3 lg:gap-2 xl:gap-3 items-stretch lg:items-center justify-between w-full min-h-[72px] min-w-0">
+        <div className="w-full lg:w-auto flex items-center shrink-0 min-w-0">
           <select
             className="w-full lg:w-[280px] xl:w-[320px] max-w-full px-4 py-3 lg:py-0 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-zinc-900 transition-all cursor-pointer shadow-sm appearance-none shrink-0 h-11 lg:h-11"
             value={selectedSection}
@@ -60,10 +60,10 @@ export function DetalleFiltersBar({
           value={stickerSearchTerm}
           onChange={handleStickerSearch}
           placeholder="Buscar ARG10"
-          className="w-full lg:w-[180px] xl:w-[220px] shrink-0"
+          className="w-full lg:w-[180px] xl:w-[220px] shrink min-w-0"
         />
 
-        <div className="grid grid-cols-3 gap-2 w-full lg:w-auto sm:flex sm:flex-row sm:w-auto lg:gap-1.5 xl:gap-2 shrink-0">
+        <div className="grid grid-cols-3 gap-2 w-full lg:w-auto sm:flex sm:flex-row sm:w-auto lg:gap-1.5 xl:gap-2 shrink-0 min-w-0">
           <button
             onClick={() => toggle('unique')}
             className={`${DESKTOP_CHIP_BASE} lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-3 xl:text-sm ${detailFilter === 'unique' ? BTN_ACTIVE : BTN_INACTIVE}`}
@@ -88,7 +88,7 @@ export function DetalleFiltersBar({
         </div>
 
         {action && (
-          <div className="w-full lg:w-auto lg:ml-auto shrink-0">
+          <div className="w-full lg:w-auto lg:ml-auto shrink-0 min-w-0">
             {action}
           </div>
         )}

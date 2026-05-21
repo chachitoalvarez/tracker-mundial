@@ -28,3 +28,30 @@ export interface TradeCandidate {
   iOfferCount: number
   matchScore: number
 }
+
+export type TradeProposalStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'cancelled'
+export type TradeProposalDirection = 'sent' | 'received'
+
+export interface TradeProposalSticker {
+  normalizedCode: string
+  visualCode: string
+  name: string
+  section: string
+  quantity: number
+}
+
+export interface TradeProposal {
+  id: string
+  direction: TradeProposalDirection
+  status: TradeProposalStatus
+  otherUserId: string
+  otherUsername: string
+  creatorWillReceive: TradeProposalSticker[]
+  creatorWillGive: TradeProposalSticker[]
+  createdAt: string
+  updatedAt: string
+  acceptedAt?: string | null
+  rejectedAt?: string | null
+  cancelledAt?: string | null
+  expiredAt?: string | null
+}

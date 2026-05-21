@@ -5,7 +5,7 @@ import { TradeStickerGroup } from '@/features/intercambios/TradeStickerGroup'
 import { TradeBalanceBar } from '@/features/intercambios/TradeBalanceBar'
 import { describeStickerCode, formatStickerDisplayId, getStickerByCanonicalCode } from '@/lib/album'
 import type { LeaderboardEntry } from '@/types/user'
-import type { TradeMatch } from '@/types/trade'
+import type { TradeMatch, TradeProposalSticker } from '@/types/trade'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import type { AlbumSection, Sticker } from '@/types/album'
 
@@ -14,7 +14,7 @@ interface Props {
   albumData: AlbumSection[]
   onClose: () => void
   onStartChat: (otherUserId: string, otherUsername: string, prefill?: string) => void
-  onRegisterTrade: (received: Array<{ sticker: Sticker; quantity: number }>, delivered: Array<{ sticker: Sticker; quantity: number }>) => void
+  onCreateTradeProposal: (targetUserId: string, creatorWillReceive: TradeProposalSticker[], creatorWillGive: TradeProposalSticker[]) => Promise<{ error: string | null }>
   onViewSummary: () => void
 }
 
@@ -117,7 +117,17 @@ function TradeReviewRow({ item, onRemove }: { item: TradeRegistrationItem; onRem
   )
 }
 
-export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onRegisterTrade, onViewSummary }: Props) {
+function toProposalSticker(item: TradeRegistrationItem): TradeProposalSticker {
+  return {
+    normalizedCode: item.sticker.codigoFigura,
+    visualCode: formatStickerDisplayId(item.code),
+    name: item.sticker.nombreFigura || formatStickerDisplayId(item.code),
+    section: item.sticker.paisEquipo || item.sticker.subseccion,
+    quantity: 1,
+  }
+}
+
+export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onCreateTradeProposal, onViewSummary }: Props) {
   const completed = user.completed ?? 0
   const needed = user.needed ?? 0
   const repeated = user.repeated ?? 0
@@ -196,7 +206,7 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
     setTradeStep('select')
   }
 
-  const confirmTrade = () => {
+  const confirmTrade = async () => {
     for (const item of selectedDeliverItems) {
       if (getCurrentCount(albumData, item.sticker) <= 1) {
         setTradeError('Ya no tenés repetidas de esta figurita. Quitala del canje para continuar.')
@@ -204,10 +214,20 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
       }
     }
 
-    onRegisterTrade(
-      selectedReceiveItems.map(item => ({ sticker: item.sticker, quantity: 1 })),
-      selectedDeliverItems.map(item => ({ sticker: item.sticker, quantity: 1 })),
+    const { error } = await onCreateTradeProposal(
+      String(user.id),
+      selectedReceiveItems.map(toProposalSticker),
+      selectedDeliverItems.map(toProposalSticker),
     )
+    if (error) {
+      console.error('[trade proposal] create failed:', error)
+      setTradeError(
+        error.includes('create_trade_proposal')
+          ? 'Falta configurar las propuestas de canje en la base. Aplicá la migración y probá de nuevo.'
+          : 'No pudimos enviar la propuesta. Probá de nuevo.'
+      )
+      return
+    }
     setTradeError(null)
     setTradeStep('success')
   }
@@ -318,7 +338,7 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white shadow-sm transition-all hover:bg-amber-600 active:scale-[0.98] disabled:bg-zinc-200 disabled:text-zinc-400"
               >
                 <RefreshCcw className="h-5 w-5" strokeWidth={2.5} />
-                Registrar canje
+                Proponer canje
               </button>
 
               {matchState.match.theyOfferCount > 0 && (
@@ -364,7 +384,7 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
           {tradeStep === 'select' && (
             <div className="p-4 md:p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-zinc-900">Registrar canje</h2>
+                <h2 className="text-2xl font-black tracking-tight text-zinc-900">Proponer canje</h2>
                 <p className="mt-1 text-sm font-medium text-zinc-500">Seleccioná qué figuritas vas a recibir y cuáles vas a entregar.</p>
               </div>
 
@@ -427,8 +447,8 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
           {tradeStep === 'review' && (
             <div className="p-4 md:p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-zinc-900">Revisá el canje</h2>
-                <p className="mt-1 text-sm font-medium text-zinc-500">Confirmá que las figuritas del intercambio sean correctas.</p>
+                <h2 className="text-2xl font-black tracking-tight text-zinc-900">Revisá la propuesta</h2>
+                <p className="mt-1 text-sm font-medium text-zinc-500">Confirmá qué figuritas querés proponer para el canje.</p>
               </div>
               {tradeError && (
                 <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">
@@ -471,10 +491,10 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
                 <Check className="h-8 w-8" strokeWidth={3} />
               </div>
-              <h2 className="text-xl font-black text-zinc-900">Canje registrado</h2>
-              <p className="mt-2 text-sm font-medium text-zinc-500">Actualizamos tu álbum.</p>
+              <h2 className="text-xl font-black text-zinc-900">Propuesta enviada</h2>
+              <p className="mt-2 text-sm font-medium text-zinc-500">Cuando el otro usuario la acepte, actualizamos los dos álbumes.</p>
               <p className="mt-2 text-sm font-bold text-zinc-700">
-                Sumamos {selectedReceiveItems.length} {selectedReceiveItems.length === 1 ? 'figurita' : 'figuritas'} y descontamos {selectedDeliverItems.length} {selectedDeliverItems.length === 1 ? 'repetida' : 'repetidas'}.
+                Pendiente de confirmación
               </p>
             </div>
           )}
@@ -552,7 +572,7 @@ export function PublicProfileDrawer({ user, albumData, onClose, onStartChat, onR
                   disabled={selectedTotal === 0}
                   className="rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition-all hover:bg-amber-600 disabled:bg-zinc-200 disabled:text-zinc-400"
                 >
-                  Confirmar canje
+                  Enviar propuesta
                 </button>
               </div>
               <p className="text-xs font-bold text-zinc-500">Recibís {selectedReceive.size} · Entregás {selectedDeliver.size}</p>
