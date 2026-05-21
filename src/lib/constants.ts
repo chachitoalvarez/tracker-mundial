@@ -17,6 +17,32 @@ export const TAB_LABELS: Record<Tab, string> = {
   logros: 'Logros',
 }
 
+export const TAB_PATHS: Record<Tab, string> = {
+  resumen: '/resumen',
+  detalle: '/detalle',
+  comparar: '/ranking',
+  intercambios: '/canjes',
+  logros: '/logros',
+}
+
+export const PATH_TABS: Record<string, Tab> = {
+  '/': 'resumen',
+  '/resumen': 'resumen',
+  '/detalle': 'detalle',
+  '/ranking': 'comparar',
+  '/canjes': 'intercambios',
+  '/logros': 'logros',
+}
+
+export function getTabFromPath(pathname: string): Tab | null {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/'
+  return PATH_TABS[normalizedPath] ?? null
+}
+
+export function getPathForTab(tab: Tab): string {
+  return TAB_PATHS[tab]
+}
+
 export const INTERCAMBIOS_TAB_LABELS: Record<IntercambiosTab, string> = {
   explorar: 'Explorar',
   conexiones: 'Conexiones',
